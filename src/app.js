@@ -484,7 +484,10 @@
     const dlg = $('card-sheet');
     const isLast = state.next >= 10;
     const nextLabel = isLast ? '総合リーディングを見る' : (c.pos === state.next ? '次のカードをめくる' : 'スプレッドに戻る');
-    $('sheet-pos').innerHTML = `${c.pos} 枚目<span class="sep">・</span>${p.name}<span class="frame">${FRAME_LABEL[POS_FRAME[c.pos]]}</span>`;
+    $('sheet-pos').innerHTML = `
+      <span class="pos-n">${c.pos} 枚目 <span class="sep">/</span> 10</span>
+      <strong class="pos-name">${p.name}</strong>
+      <span class="pos-desc">${p.desc}</span>`;
     $('sheet-body').innerHTML = `
       <div class="sheet-hero">
         <div class="sheet-art${c.rev ? ' is-reversed' : ''}">${Art.face(c.card, 200 + c.pos)}</div>
@@ -495,7 +498,7 @@
         <summary>キーワード・基本の意味・このポジションについて</summary>
         <ul class="keywords" aria-label="キーワード">${keywordsOf(c).map((k) => `<li>${k}</li>`).join('')}</ul>
         <p class="sheet-basic"><span>基本の意味</span>${c.rev ? c.card.meaning.rev : c.card.meaning.up}</p>
-        <p class="sheet-basic"><span>${c.pos}　${p.name}</span>${p.desc}</p>
+        <p class="sheet-basic"><span>読み方</span>${FRAME_LABEL[POS_FRAME[c.pos]]}読んでいます。</p>
       </details>`;
     const nextBtn = $('sheet-next');
     nextBtn.textContent = nextLabel;

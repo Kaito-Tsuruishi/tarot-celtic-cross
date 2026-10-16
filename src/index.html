@@ -262,13 +262,15 @@ body.in-spread.is-done { padding-bottom: 24px; }
 @keyframes sheet-down { to { transform: translateY(40px); opacity: 0; } }
 @keyframes fade-out { to { opacity: 0; } }
 @keyframes sheet-up { from { transform: translateY(40px); opacity: 0; } to { transform: none; opacity: 1; } }
-.sheet-handle { padding: 8px 20px 10px; touch-action: none; cursor: grab; user-select: none; -webkit-user-select: none; }
+.sheet-handle { padding: 8px 20px 12px; border-bottom: 1px solid rgba(195,164,108,0.18); touch-action: none; cursor: grab; user-select: none; -webkit-user-select: none; }
 .sheet-scroll { overflow-y: auto; overscroll-behavior: none; touch-action: pan-y pinch-zoom; padding: 4px 20px 12px; -webkit-overflow-scrolling: touch; outline: none; }
 .sheet-grip { width: 44px; height: 5px; border-radius: 3px; background: var(--brass); margin: 2px auto 12px; opacity: 0.8; }
-.sheet-pos { font-size: 0.74rem; letter-spacing: 0.2em; color: var(--brass); text-align: center; }
-.sheet-pos .sep { margin: 0 0.3em; color: var(--brass-dim); }
-.sheet-pos .frame { display: block; font-size: 0.7rem; letter-spacing: 0.1em; color: var(--parchment-dim); margin-top: 2px; }
-.sheet-hero { display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center; }
+.sheet-pos { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.sheet-pos .pos-n { font-size: 0.72rem; letter-spacing: 0.25em; color: var(--brass); }
+.sheet-pos .pos-n .sep { margin: 0 0.2em; color: var(--brass-dim); }
+.sheet-pos .pos-name { font-size: 1.45rem; font-weight: 600; letter-spacing: 0.2em; text-indent: 0.2em; color: var(--parchment); line-height: 1.3; }
+.sheet-pos .pos-desc { font-size: 0.78rem; color: var(--parchment-dim); line-height: 1.6; max-width: 32em; text-wrap: balance; }
+.sheet-hero { display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center; padding-top: 10px; }
 .sheet-hero .card-sub { justify-content: center; }
 .sheet-hero .card-line h2 { font-size: 1.4rem; }
 .sheet-art { flex: 0 0 auto; width: 128px; border-radius: 6px; overflow: hidden; box-shadow: 0 10px 22px rgba(0,0,0,0.5); }
