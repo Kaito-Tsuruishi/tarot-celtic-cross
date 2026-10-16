@@ -246,7 +246,7 @@ body.in-spread.is-done { padding-bottom: 24px; }
   max-height: 88dvh; background: linear-gradient(180deg, #221b15, #17130f);
   color: var(--parchment); border-radius: 16px 16px 0 0;
   box-shadow: 0 -12px 40px rgba(0,0,0,0.6); border-top: 1px solid rgba(195,164,108,0.4);
-  display: grid; grid-template-rows: 1fr auto; overflow: hidden;
+  display: grid; grid-template-rows: auto 1fr auto; overflow: hidden;
 }
 .sheet:not([open]) { display: none; }
 .sheet::backdrop { background: rgba(8,6,4,0.66); }
@@ -262,9 +262,10 @@ body.in-spread.is-done { padding-bottom: 24px; }
 @keyframes sheet-down { to { transform: translateY(40px); opacity: 0; } }
 @keyframes fade-out { to { opacity: 0; } }
 @keyframes sheet-up { from { transform: translateY(40px); opacity: 0; } to { transform: none; opacity: 1; } }
-.sheet-scroll { overflow-y: auto; overscroll-behavior: none; touch-action: pan-y pinch-zoom; padding: 8px 20px 12px; -webkit-overflow-scrolling: touch; outline: none; }
-.sheet-grip { width: 44px; height: 5px; border-radius: 3px; background: var(--brass); margin: 2px auto 14px; opacity: 0.8; }
-.sheet-pos { font-size: 0.74rem; letter-spacing: 0.2em; color: var(--brass); text-align: center; margin-bottom: 12px; }
+.sheet-handle { padding: 8px 20px 10px; touch-action: none; cursor: grab; user-select: none; -webkit-user-select: none; }
+.sheet-scroll { overflow-y: auto; overscroll-behavior: none; touch-action: pan-y pinch-zoom; padding: 4px 20px 12px; -webkit-overflow-scrolling: touch; outline: none; }
+.sheet-grip { width: 44px; height: 5px; border-radius: 3px; background: var(--brass); margin: 2px auto 12px; opacity: 0.8; }
+.sheet-pos { font-size: 0.74rem; letter-spacing: 0.2em; color: var(--brass); text-align: center; }
 .sheet-pos .sep { margin: 0 0.3em; color: var(--brass-dim); }
 .sheet-pos .frame { display: block; font-size: 0.7rem; letter-spacing: 0.1em; color: var(--parchment-dim); margin-top: 2px; }
 .sheet-hero { display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center; }
@@ -412,8 +413,11 @@ footer.site { text-align: center; font-size: 0.72rem; color: var(--brass-dim); m
 </div>
 
 <dialog class="sheet" id="card-sheet" aria-labelledby="sheet-heading">
-  <div class="sheet-scroll" id="sheet-scroll" tabindex="0">
+  <div class="sheet-handle" id="sheet-handle">
     <div class="sheet-grip" aria-hidden="true"></div>
+    <div class="sheet-pos" id="sheet-pos"></div>
+  </div>
+  <div class="sheet-scroll" id="sheet-scroll" tabindex="0">
     <h2 id="sheet-heading" class="visually-hidden">カードの解釈</h2>
     <div id="sheet-body"></div>
   </div>
@@ -1512,12 +1516,13 @@ const Reading = (() => {
   // シートを下に引っ張って閉じる
   function setupSheetDrag() {
     const dlg = $('card-sheet');
-    const scroller = $('sheet-scroll');
+    const handle = $('sheet-handle');
     let touchId = null, startY = 0, dy = 0, dragging = false, startT = 0, closing = false;
     const CLOSE_PX = 110, CLOSE_VEL = 0.6, START_PX = 8;
     const findTouch = (e) => [...e.changedTouches].find((t) => t.identifier === touchId);
     dlg.addEventListener('touchstart', (e) => {
-      if (closing) return;
+      touchId = null;
+      if (closing || !handle.contains(e.target)) return;
       const t = e.changedTouches[0];
       touchId = t.identifier;
       startY = t.clientY;
@@ -1531,8 +1536,7 @@ const Reading = (() => {
       if (!t) return;
       const y = t.clientY - startY;
       if (!dragging) {
-        // 本文が上端にあって下へ引いているなら、ブラウザのスクロールに渡さず自分で扱う
-        if (y > 0 && scroller.scrollTop <= 0) {
+        if (y > 0) {
           if (e.cancelable) e.preventDefault();
           if (y > START_PX) {
             dragging = true;
@@ -1583,8 +1587,8 @@ const Reading = (() => {
     const dlg = $('card-sheet');
     const isLast = state.next >= 10;
     const nextLabel = isLast ? '総合リーディングを見る' : (c.pos === state.next ? '次のカードをめくる' : 'スプレッドに戻る');
+    $('sheet-pos').innerHTML = `${c.pos} 枚目<span class="sep">・</span>${p.name}<span class="frame">${FRAME_LABEL[POS_FRAME[c.pos]]}</span>`;
     $('sheet-body').innerHTML = `
-      <div class="sheet-pos">${c.pos} 枚目<span class="sep">・</span>${p.name}<span class="frame">${FRAME_LABEL[POS_FRAME[c.pos]]}</span></div>
       <div class="sheet-hero">
         <div class="sheet-art${c.rev ? ' is-reversed' : ''}">${Art.face(c.card, 200 + c.pos)}</div>
         ${cardLineHtml(c, 'h2')}

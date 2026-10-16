@@ -413,12 +413,13 @@
   // シートを下に引っ張って閉じる
   function setupSheetDrag() {
     const dlg = $('card-sheet');
-    const scroller = $('sheet-scroll');
+    const handle = $('sheet-handle');
     let touchId = null, startY = 0, dy = 0, dragging = false, startT = 0, closing = false;
     const CLOSE_PX = 110, CLOSE_VEL = 0.6, START_PX = 8;
     const findTouch = (e) => [...e.changedTouches].find((t) => t.identifier === touchId);
     dlg.addEventListener('touchstart', (e) => {
-      if (closing) return;
+      touchId = null;
+      if (closing || !handle.contains(e.target)) return;
       const t = e.changedTouches[0];
       touchId = t.identifier;
       startY = t.clientY;
@@ -432,8 +433,7 @@
       if (!t) return;
       const y = t.clientY - startY;
       if (!dragging) {
-        // 本文が上端にあって下へ引いているなら、ブラウザのスクロールに渡さず自分で扱う
-        if (y > 0 && scroller.scrollTop <= 0) {
+        if (y > 0) {
           if (e.cancelable) e.preventDefault();
           if (y > START_PX) {
             dragging = true;
@@ -484,8 +484,8 @@
     const dlg = $('card-sheet');
     const isLast = state.next >= 10;
     const nextLabel = isLast ? '総合リーディングを見る' : (c.pos === state.next ? '次のカードをめくる' : 'スプレッドに戻る');
+    $('sheet-pos').innerHTML = `${c.pos} 枚目<span class="sep">・</span>${p.name}<span class="frame">${FRAME_LABEL[POS_FRAME[c.pos]]}</span>`;
     $('sheet-body').innerHTML = `
-      <div class="sheet-pos">${c.pos} 枚目<span class="sep">・</span>${p.name}<span class="frame">${FRAME_LABEL[POS_FRAME[c.pos]]}</span></div>
       <div class="sheet-hero">
         <div class="sheet-art${c.rev ? ' is-reversed' : ''}">${Art.face(c.card, 200 + c.pos)}</div>
         ${cardLineHtml(c, 'h2')}
