@@ -22,7 +22,8 @@
   --card-h: calc(var(--card-w) * 5 / 3);
   --gap: 10px;
   --serif: "Hiragino Mincho ProN", "Yu Mincho", "YuMincho", "Noto Serif JP", "Iowan Old Style", "Palatino", Georgia, serif;
-  --flip-ms: 700ms;
+  --flip-ms: 620ms;
+  --deal-ms: 560ms;
 }
 * { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
@@ -45,7 +46,12 @@ button { font-family: inherit; }
 
 .wrap { max-width: 720px; margin: 0 auto; padding: 24px 24px 64px; }
 
-header.site { text-align: center; padding: 8px 0 24px; }
+header.site { text-align: center; padding: 8px 0 24px; transition: padding 300ms; }
+body.in-spread header.site { padding: 0 0 14px; }
+body.in-spread header.site h1 { font-size: 1.1rem; }
+body.in-spread header.site .en { display: none; }
+body.in-spread header.site .rule-line { margin-top: 8px; }
+body.in-spread { padding-bottom: 96px; }
 header.site h1 { font-size: 1.5rem; font-weight: 500; letter-spacing: 0.3em; margin: 0; text-indent: 0.3em; }
 header.site .en { display: block; font-size: 0.68rem; letter-spacing: 0.35em; color: var(--brass-dim); margin-top: 4px; text-indent: 0.35em; }
 .rule-line { width: 64px; height: 1px; margin: 16px auto 0; background: linear-gradient(90deg, transparent, var(--brass), transparent); }
@@ -54,6 +60,7 @@ header.site .en { display: block; font-size: 0.68rem; letter-spacing: 0.35em; co
 .lead { text-align: center; color: var(--parchment-dim); font-size: 0.95rem; margin: 0 0 24px; }
 @media (max-width: 480px) { .lead br { display: none; } }
 .genres { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+.genres li { animation: rise 420ms ease-out both; animation-delay: calc(var(--i) * 60ms); }
 @media (min-width: 560px) { .genres { grid-template-columns: repeat(3, 1fr); } }
 .genre-btn {
   width: 100%; min-height: 96px; padding: 14px 12px; text-align: left; cursor: pointer;
@@ -69,7 +76,12 @@ header.site .en { display: block; font-size: 0.68rem; letter-spacing: 0.35em; co
 .notice { font-size: 0.8rem; color: var(--parchment-dim); border-left: 2px solid var(--brass-dim); padding: 4px 12px; margin: 20px 0 0; line-height: 1.7; }
 
 /* スプレッド画面 */
-.toolbar { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.toolbar { display: flex; flex-wrap: nowrap; gap: 8px; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.toolbar .actions { flex-wrap: nowrap; }
+@media (max-width: 480px) {
+  .toolbar .chip { font-size: 0.78rem; padding: 2px 10px; white-space: nowrap; }
+  .toolbar .btn { font-size: 0.74rem; padding: 6px 10px; letter-spacing: 0.04em; white-space: nowrap; }
+}
 .chip { font-size: 0.85rem; letter-spacing: 0.15em; color: var(--brass); border: 1px solid var(--brass-dim); border-radius: 999px; padding: 2px 14px; }
 .actions { display: flex; gap: 8px; flex-wrap: wrap; }
 .btn {
@@ -126,8 +138,6 @@ header.site .en { display: block; font-size: 0.68rem; letter-spacing: 0.35em; co
 .card.is-next .card-inner { box-shadow: 0 0 0 2px var(--brass), 0 10px 22px rgba(0,0,0,0.45); }
 .card.is-next:not(.is-flipped) .card-inner { animation: beckon 2.4s ease-in-out infinite; }
 @keyframes beckon { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
-.card.is-dealing .card-inner { animation: deal 420ms ease-out both; }
-@keyframes deal { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
 .pos-label {
   position: absolute; top: -7px; left: -7px; z-index: 3;
   width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center;
@@ -156,9 +166,88 @@ header.site .en { display: block; font-size: 0.68rem; letter-spacing: 0.35em; co
 .card-art .medal { fill: var(--night-2); stroke: var(--brass); stroke-width: 0.6; }
 
 /* 進行表示 */
-.status { text-align: center; margin: 0 0 16px; }
-.status p { margin: 0 0 10px; font-size: 0.95rem; }
-.status .hint { color: var(--parchment-dim); font-size: 0.8rem; }
+.progress { display: flex; justify-content: center; gap: 7px; margin: 0 0 6px; }
+.progress .dot { width: 7px; height: 7px; border-radius: 50%; border: 1px solid var(--brass-dim); background: transparent; transition: background-color 240ms, transform 240ms; }
+.progress .dot.is-done { background: var(--brass); border-color: var(--brass); }
+.progress .dot.is-next { transform: scale(1.35); border-color: var(--brass); }
+.hint { text-align: center; color: var(--parchment-dim); font-size: 0.74rem; margin: 0 0 16px; line-height: 1.6; }
+
+.actionbar {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
+  display: none; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+  background: rgba(23,19,15,0.82); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  border-top: 1px solid rgba(195,164,108,0.3);
+}
+body.in-spread:not(.is-done) .actionbar { display: flex; }
+body.in-spread.is-done { padding-bottom: 24px; }
+.actionbar p { margin: 0; font-size: 0.85rem; color: var(--parchment-dim); min-width: 0; flex: 1; line-height: 1.5; }
+.actionbar .btn { flex: 0 0 auto; white-space: nowrap; }
+@media (min-width: 720px) { .actionbar { left: 50%; right: auto; transform: translateX(-50%); width: 720px; border-radius: 10px 10px 0 0; border: 1px solid rgba(195,164,108,0.3); border-bottom: 0; } }
+
+/* 山札とシャッフル */
+.deck { grid-area: p1; position: relative; z-index: 8; width: var(--card-w); height: var(--card-h); transition: opacity 500ms; }
+.deck.is-fading { opacity: 0; pointer-events: none; }
+.deck-card {
+  position: absolute; inset: 0; border-radius: 6px;
+  transform: translate(calc(var(--k) * -1.2px), calc(var(--k) * -1.6px));
+  box-shadow: 0 6px 14px rgba(0,0,0,0.45);
+}
+.deck.is-shuffling .deck-card:nth-child(odd) { animation: riffle-l 550ms ease-in-out 2; }
+.deck.is-shuffling .deck-card:nth-child(even) { animation: riffle-r 550ms ease-in-out 2; animation-delay: 90ms; }
+@keyframes riffle-l { 0%, 100% { transform: translate(0, 0) rotate(0); } 50% { transform: translate(-46%, -6%) rotate(-7deg); } }
+@keyframes riffle-r { 0%, 100% { transform: translate(0, 0) rotate(0); } 50% { transform: translate(46%, 6%) rotate(7deg); } }
+
+/* 配置（着地） */
+.slot { transition: transform var(--deal-ms) cubic-bezier(0.22, 0.8, 0.25, 1), opacity 260ms ease-out; }
+.slot.is-undealt { opacity: 0; }
+.slot.is-landing { z-index: 1; }
+.slot.is-landing .card-inner { box-shadow: 0 14px 26px rgba(0,0,0,0.5); }
+
+.card.is-glow .card-inner { animation: glow 1.2s ease-out; }
+@keyframes glow { 0% { box-shadow: 0 0 0 0 rgba(195,164,108,0.9), 0 10px 22px rgba(0,0,0,0.45); } 100% { box-shadow: 0 0 0 14px rgba(195,164,108,0), 0 10px 22px rgba(0,0,0,0.45); } }
+
+/* サムネイル */
+.thumb { flex: 0 0 auto; width: 54px; border-radius: 4px; overflow: hidden; box-shadow: 0 2px 6px rgba(0,0,0,0.45); }
+.thumb.is-reversed { transform: rotate(180deg); }
+.thumb .card-art { display: block; width: 100%; height: auto; }
+
+/* 拡大シート */
+.sheet {
+  border: 0; padding: 0; margin: auto 0 0; width: 100%; max-width: 100%;
+  max-height: 88dvh; background: linear-gradient(180deg, #221b15, #17130f);
+  color: var(--parchment); border-radius: 16px 16px 0 0;
+  box-shadow: 0 -12px 40px rgba(0,0,0,0.6); border-top: 1px solid rgba(195,164,108,0.4);
+  display: grid; grid-template-rows: 1fr auto; overflow: hidden;
+}
+.sheet:not([open]) { display: none; }
+.sheet::backdrop { background: rgba(8,6,4,0.62); backdrop-filter: blur(3px); }
+.sheet[open] { animation: sheet-up 380ms cubic-bezier(0.2, 0.8, 0.2, 1); }
+@keyframes sheet-up { from { transform: translateY(40px); opacity: 0; } to { transform: none; opacity: 1; } }
+.sheet-scroll { overflow-y: auto; padding: 8px 20px 12px; -webkit-overflow-scrolling: touch; }
+.sheet-grip { width: 40px; height: 4px; border-radius: 2px; background: var(--brass-dim); margin: 2px auto 14px; opacity: 0.7; }
+.sheet-pos .pos { font-size: 0.74rem; letter-spacing: 0.2em; color: var(--brass); }
+.sheet-pos .pos-desc { font-size: 0.78rem; color: var(--parchment-dim); margin: 2px 0 14px; line-height: 1.6; }
+.sheet-card { display: flex; gap: 16px; align-items: flex-start; }
+.sheet-art { flex: 0 0 auto; width: 112px; border-radius: 6px; overflow: hidden; box-shadow: 0 10px 22px rgba(0,0,0,0.5); }
+.sheet-art.is-reversed { transform: rotate(180deg); }
+.sheet-art .card-art { display: block; width: 100%; height: auto; }
+.sheet-main { min-width: 0; flex: 1; }
+.sheet-main h2 { margin: 0; font-size: 1.35rem; font-weight: 500; letter-spacing: 0.1em; line-height: 1.4; }
+.sheet-main .card-line { flex-direction: column; align-items: flex-start; gap: 4px; }
+.sheet-text { font-size: 1rem; margin: 16px 0 12px; line-height: 1.9; }
+.sheet-basic { font-size: 0.82rem; color: var(--parchment-dim); margin: 0; line-height: 1.7; border-top: 1px solid rgba(195,164,108,0.2); padding-top: 10px; }
+.sheet-basic span { display: block; font-size: 0.68rem; letter-spacing: 0.2em; color: var(--brass-dim); margin-bottom: 2px; }
+.sheet-actions { display: flex; gap: 10px; justify-content: flex-end; padding: 10px 20px calc(12px + env(safe-area-inset-bottom)); border-top: 1px solid rgba(195,164,108,0.2); background: rgba(23,19,15,0.6); }
+.sheet-actions .btn { flex: 1; text-align: center; white-space: nowrap; }
+.sheet-actions #sheet-close { flex: 0 0 auto; }
+@media (min-width: 640px) {
+  .sheet { margin: auto; width: 520px; max-height: 84vh; border-radius: 12px; border: 1px solid rgba(195,164,108,0.4); }
+  .sheet[open] { animation-name: sheet-in; }
+  @keyframes sheet-in { from { transform: translateY(14px); opacity: 0; } to { transform: none; opacity: 1; } }
+  .sheet-art { width: 140px; }
+  .sheet-actions .btn { flex: 0 0 auto; }
+}
 
 details.positions { margin: 0 0 20px; border-top: 1px solid rgba(195,164,108,0.25); border-bottom: 1px solid rgba(195,164,108,0.25); }
 details.positions summary { cursor: pointer; padding: 10px 0; font-size: 0.9rem; letter-spacing: 0.1em; color: var(--brass); }
@@ -175,6 +264,8 @@ details.positions b { color: var(--parchment); font-weight: 500; }
 }
 @keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 .entry .pos { font-size: 0.72rem; letter-spacing: 0.2em; color: var(--brass); }
+.entry-body, .final-body { display: flex; gap: 14px; align-items: flex-start; }
+.entry-main { min-width: 0; flex: 1; }
 .entry .pos-desc { font-size: 0.78rem; color: var(--parchment-dim); margin: 2px 0 10px; line-height: 1.6; }
 .entry .card-line { display: flex; align-items: baseline; flex-wrap: wrap; gap: 6px 10px; }
 .entry h3 { margin: 0; font-size: 1.2rem; font-weight: 500; letter-spacing: 0.1em; }
@@ -184,14 +275,21 @@ details.positions b { color: var(--parchment); font-weight: 500; }
 .badge.rev { color: #e2a39d; border-color: var(--oxblood); background: rgba(142,59,54,0.18); }
 .keywords { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 10px; padding: 0; list-style: none; }
 .keywords li { font-size: 0.74rem; color: var(--parchment-dim); border: 1px solid rgba(185,171,143,0.35); border-radius: 999px; padding: 0 10px; }
-.entry .text { margin: 0; font-size: 0.95rem; }
+.entry .text, .final .text { margin: 0; font-size: 0.95rem; }
+.entry.entry { animation-duration: 300ms; }
 
 .summary { margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--brass-dim); animation: rise 500ms ease-out both; }
 .summary h2 { font-size: 1.1rem; font-weight: 500; letter-spacing: 0.3em; text-align: center; margin: 0 0 4px; }
 .summary .en { display: block; text-align: center; font-size: 0.62rem; letter-spacing: 0.35em; color: var(--brass-dim); margin-bottom: 20px; }
 .summary p { margin: 0 0 14px; font-size: 0.95rem; }
+.strip { display: flex; gap: 8px; overflow-x: auto; padding: 6px 2px 10px; margin: 0 -2px 16px; scrollbar-width: none; }
+.strip::-webkit-scrollbar { display: none; }
+.strip-item { position: relative; flex: 0 0 auto; padding: 0; border: 0; background: transparent; cursor: pointer; border-radius: 4px; }
+.strip-item .thumb { width: 48px; }
+.strip-pos { position: absolute; top: -6px; left: -6px; width: 18px; height: 18px; border-radius: 50%; background: var(--brass); color: var(--desk); font-size: 0.6rem; font-weight: 600; display: grid; place-items: center; }
 .summary .final { border: 1px solid rgba(195,164,108,0.3); border-radius: 6px; padding: 14px 18px; margin-top: 18px; }
-.summary .final .pos { font-size: 0.72rem; letter-spacing: 0.2em; color: var(--brass); }
+.summary .final .pos { font-size: 0.72rem; letter-spacing: 0.2em; color: var(--brass); margin-bottom: 8px; }
+.summary .final .card-line { margin-bottom: 6px; }
 .summary .again { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 28px; }
 
 footer.site { text-align: center; font-size: 0.72rem; color: var(--brass-dim); margin-top: 48px; letter-spacing: 0.05em; }
@@ -200,7 +298,8 @@ footer.site { text-align: center; font-size: 0.72rem; color: var(--brass-dim); m
 
 @media (prefers-reduced-motion: reduce) {
   .card-inner { transition: none; }
-  .card.is-next:not(.is-flipped) .card-inner, .card.is-dealing .card-inner, .entry, .summary { animation: none; }
+  .card.is-next:not(.is-flipped) .card-inner, .card.is-glow .card-inner, .entry, .summary, .genres li, .sheet[open], .deck-card { animation: none; }
+  .slot, .deck, .progress .dot, header.site { transition: none; }
   .genre-btn, .btn { transition: none; }
 }
 @media (max-width: 400px) {
@@ -237,13 +336,10 @@ footer.site { text-align: center; font-size: 0.72rem; color: var(--brass-dim); m
       </div>
       <p class="notice" id="health-notice" hidden>この占いは医療の代わりではありません。体調が気になるときは医療機関に相談してください。</p>
 
-      <div class="spread" id="spread" role="group" aria-label="ケルト十字の 10 枚"></div>
+      <div class="progress" id="progress" role="status" aria-label="0 / 10 枚めくりました"></div>
 
-      <div class="status" aria-live="polite">
-        <p id="status-text"></p>
-        <button type="button" class="btn primary" id="btn-flip">次のカードをめくる</button>
-        <p class="hint" id="status-hint">カードをタップするか、Enter キーでもめくれます。</p>
-      </div>
+      <div class="spread" id="spread" role="group" aria-label="ケルト十字の 10 枚"></div>
+      <p class="hint">光っているカードをタップするか、下のボタンでめくります。めくったカードはもう一度タップすると読み返せます。</p>
 
       <details class="positions">
         <summary>10 のポジションについて</summary>
@@ -255,6 +351,7 @@ footer.site { text-align: center; font-size: 0.72rem; color: var(--brass-dim); m
       <section class="summary" id="summary" hidden aria-labelledby="summary-heading">
         <h2 id="summary-heading">総合リーディング</h2>
         <span class="en">OVERALL READING</span>
+        <div class="strip" id="summary-strip" aria-label="10 枚の並び"></div>
         <div id="summary-body"></div>
         <div class="again">
           <button type="button" class="btn primary" id="btn-again-2">もう一度占う</button>
@@ -266,6 +363,23 @@ footer.site { text-align: center; font-size: 0.72rem; color: var(--brass-dim); m
 
   <footer class="site">カードの絵柄・解釈文はこのアプリのオリジナルです。</footer>
 </div>
+
+<div class="actionbar" id="actionbar" aria-live="polite">
+  <p id="status-text"></p>
+  <button type="button" class="btn primary" id="btn-flip">1 枚目をめくる</button>
+</div>
+
+<dialog class="sheet" id="card-sheet" aria-labelledby="sheet-heading">
+  <div class="sheet-scroll" id="sheet-scroll">
+    <div class="sheet-grip" aria-hidden="true"></div>
+    <h2 id="sheet-heading" class="visually-hidden">カードの解釈</h2>
+    <div id="sheet-body"></div>
+  </div>
+  <div class="sheet-actions">
+    <button type="button" class="btn" id="sheet-close">閉じる</button>
+    <button type="button" class="btn primary" id="sheet-next">次のカードをめくる</button>
+  </div>
+</dialog>
 
 <!--DATA-->
 <!--ART-->
