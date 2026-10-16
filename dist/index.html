@@ -299,6 +299,9 @@ details.positions { margin: 0 0 20px; border-top: 1px solid rgba(195,164,108,0.2
 details.positions summary { cursor: pointer; padding: 10px 0; font-size: 0.9rem; letter-spacing: 0.1em; color: var(--brass); }
 details.positions ol { margin: 0 0 12px; padding-left: 1.6em; font-size: 0.85rem; color: var(--parchment-dim); }
 details.positions li { margin: 4px 0; }
+details.positions + details.positions { border-top: 0; }
+details.positions .kinds { list-style: none; padding: 0; margin: 0 0 12px; font-size: 0.85rem; color: var(--parchment-dim); }
+details.positions .kinds li { margin: 6px 0; line-height: 1.7; }
 details.positions b { color: var(--parchment); font-weight: 500; }
 
 /* リーディング */
@@ -315,8 +318,15 @@ details.positions b { color: var(--parchment); font-weight: 500; }
 .entry-main { min-width: 0; flex: 1; }
 .card-line { display: block; }
 .card-line h3, .card-line h2 { margin: 0; font-size: 1.2rem; font-weight: 500; letter-spacing: 0.1em; line-height: 1.4; }
-.card-sub { display: flex; align-items: center; gap: 10px; margin-top: 4px; white-space: nowrap; }
-.card-sub .en { font-size: 0.66rem; color: var(--brass-dim); letter-spacing: 0.2em; }
+.card-sub { display: flex; align-items: center; gap: 8px; margin-top: 5px; white-space: nowrap; }
+.card-line .en { display: block; font-size: 0.66rem; color: var(--brass-dim); letter-spacing: 0.2em; margin-top: 4px; }
+.chip.kind { font-size: 0.66rem; letter-spacing: 0.08em; padding: 1px 8px; border-radius: 3px; border: 1px solid; line-height: 1.6; }
+.chip.kind .sep { margin: 0 0.15em; opacity: 0.7; }
+.chip.kind.major { color: var(--brass); border-color: var(--brass-dim); background: rgba(195,164,108,0.1); }
+.chip.kind.wands { color: #d9846a; border-color: rgba(217,132,106,0.5); }
+.chip.kind.cups { color: #7fb3bf; border-color: rgba(127,179,191,0.5); }
+.chip.kind.swords { color: #aeb6c4; border-color: rgba(174,182,196,0.5); }
+.chip.kind.pentacles { color: #a7b86a; border-color: rgba(167,184,106,0.5); }
 .badge { flex: 0 0 auto; font-size: 0.68rem; letter-spacing: 0.15em; padding: 1px 8px; border-radius: 3px; border: 1px solid; line-height: 1.6; }
 .badge.up { color: var(--brass); border-color: var(--brass-dim); }
 .badge.rev { color: #e2a39d; border-color: var(--oxblood); background: rgba(142,59,54,0.18); }
@@ -389,6 +399,14 @@ footer.site { text-align: center; font-size: 0.72rem; color: var(--brass-dim); m
       <details class="positions">
         <summary>10 のポジションについて</summary>
         <ol id="positions-list"></ol>
+      </details>
+      <details class="positions">
+        <summary>カードの種類について</summary>
+        <ul class="kinds">
+          <li><b>大アルカナ（22 枚）</b>：愚者から世界まで、1 枚ずつ固有の名前を持つカード。人生の大きなテーマや転機、本人の意思を超えた流れを表し、重く読みます。</li>
+          <li><b>小アルカナ（56 枚）</b>：4 つのスート × 14 枚。日常の出来事や、自分の行動で変えられる範囲を表します。エース〜10 の数札と、ペイジ・ナイト・クイーン・キングの人物札があります。</li>
+          <li><b>ワンド（火）</b>：情熱・行動・意志　<b>カップ（水）</b>：感情・愛情・人とのつながり　<b>ソード（風）</b>：思考・判断・葛藤　<b>ペンタクル（地）</b>：お金・仕事・現実面</li>
+        </ul>
       </details>
 
       <ol class="reading" id="reading" aria-label="めくったカードの解釈"></ol>
@@ -1113,6 +1131,20 @@ const Reading = (() => {
   ];
   // ポジションごとに使う時間枠。now=いま働いている影響 / inner=意識と心の奥 / past=過ぎ去りつつある影響 / future=これから・結末
   const POS_FRAME = { 1: 'now', 2: 'now', 7: 'now', 8: 'now', 3: 'inner', 4: 'inner', 9: 'inner', 5: 'past', 6: 'future', 10: 'future' };
+  // カードの種類（大アルカナ／スート）の表示用
+  const SUIT_INFO = {
+    wands: { name: 'ワンド', element: '火', theme: '情熱・行動・意志' },
+    cups: { name: 'カップ', element: '水', theme: '感情・愛情・人とのつながり' },
+    swords: { name: 'ソード', element: '風', theme: '思考・判断・葛藤' },
+    pentacles: { name: 'ペンタクル', element: '地', theme: 'お金・仕事・現実面' },
+  };
+  const ARCANA_NOTE = {
+    major: '大アルカナは、人生の大きなテーマや転機、本人の意思を超えた流れを表す 22 枚です。ほかのカードより重く読みます。',
+    minor: (suit) => `小アルカナは日常の出来事や、自分の行動で変えられる範囲を表す 56 枚です。${SUIT_INFO[suit].name}は${SUIT_INFO[suit].element}の元素で、${SUIT_INFO[suit].theme}を司ります。`,
+  };
+  const kindChip = (card) => (card.arcana === 'major'
+    ? '<span class="chip kind major">大アルカナ</span>'
+    : `<span class="chip kind ${card.suit}">小アルカナ<span class="sep">・</span>${SUIT_INFO[card.suit].name}（${SUIT_INFO[card.suit].element}）</span>`);
   const FRAME_LABEL = { now: 'いま働いている影響として', inner: '心の内側の動きとして', past: '過ぎ去りつつある影響として', future: 'これから向かう流れとして' };
   const POSITIONS = [
     { n: 1, name: '現状', desc: 'あなたや物事全体を包んでいる空気。いま働いている影響。' },
@@ -1195,7 +1227,8 @@ const Reading = (() => {
   function cardLineHtml(c, tag = 'h3') {
     return `<div class="card-line">
       <${tag}>${c.card.nameJa}</${tag}>
-      <div class="card-sub"><span class="badge ${c.rev ? 'rev' : 'up'}">${orientLabel(c)}</span><span class="en">${c.card.nameEn.toUpperCase()}</span></div>
+      <div class="card-sub"><span class="badge ${c.rev ? 'rev' : 'up'}">${orientLabel(c)}</span>${kindChip(c.card)}</div>
+      <span class="en">${c.card.nameEn.toUpperCase()}</span>
     </div>`;
   }
   function thumbHtml(c, uid) {
@@ -1603,6 +1636,7 @@ const Reading = (() => {
         <summary>キーワード・基本の意味・このポジションについて</summary>
         <ul class="keywords" aria-label="キーワード">${keywordsOf(c).map((k) => `<li>${k}</li>`).join('')}</ul>
         <p class="sheet-basic"><span>基本の意味</span>${c.rev ? c.card.meaning.rev : c.card.meaning.up}</p>
+        <p class="sheet-basic"><span>${c.card.arcana === 'major' ? '大アルカナ' : `小アルカナ・${SUIT_INFO[c.card.suit].name}`}</span>${c.card.arcana === 'major' ? ARCANA_NOTE.major : ARCANA_NOTE.minor(c.card.suit)}</p>
         <p class="sheet-basic"><span>読み方</span>${FRAME_LABEL[POS_FRAME[c.pos]]}読んでいます。</p>
       </details>`;
     const nextBtn = $('sheet-next');

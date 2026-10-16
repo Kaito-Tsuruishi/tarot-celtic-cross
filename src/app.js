@@ -8,6 +8,20 @@
   ];
   // ポジションごとに使う時間枠。now=いま働いている影響 / inner=意識と心の奥 / past=過ぎ去りつつある影響 / future=これから・結末
   const POS_FRAME = { 1: 'now', 2: 'now', 7: 'now', 8: 'now', 3: 'inner', 4: 'inner', 9: 'inner', 5: 'past', 6: 'future', 10: 'future' };
+  // カードの種類（大アルカナ／スート）の表示用
+  const SUIT_INFO = {
+    wands: { name: 'ワンド', element: '火', theme: '情熱・行動・意志' },
+    cups: { name: 'カップ', element: '水', theme: '感情・愛情・人とのつながり' },
+    swords: { name: 'ソード', element: '風', theme: '思考・判断・葛藤' },
+    pentacles: { name: 'ペンタクル', element: '地', theme: 'お金・仕事・現実面' },
+  };
+  const ARCANA_NOTE = {
+    major: '大アルカナは、人生の大きなテーマや転機、本人の意思を超えた流れを表す 22 枚です。ほかのカードより重く読みます。',
+    minor: (suit) => `小アルカナは日常の出来事や、自分の行動で変えられる範囲を表す 56 枚です。${SUIT_INFO[suit].name}は${SUIT_INFO[suit].element}の元素で、${SUIT_INFO[suit].theme}を司ります。`,
+  };
+  const kindChip = (card) => (card.arcana === 'major'
+    ? '<span class="chip kind major">大アルカナ</span>'
+    : `<span class="chip kind ${card.suit}">小アルカナ<span class="sep">・</span>${SUIT_INFO[card.suit].name}（${SUIT_INFO[card.suit].element}）</span>`);
   const FRAME_LABEL = { now: 'いま働いている影響として', inner: '心の内側の動きとして', past: '過ぎ去りつつある影響として', future: 'これから向かう流れとして' };
   const POSITIONS = [
     { n: 1, name: '現状', desc: 'あなたや物事全体を包んでいる空気。いま働いている影響。' },
@@ -90,7 +104,8 @@
   function cardLineHtml(c, tag = 'h3') {
     return `<div class="card-line">
       <${tag}>${c.card.nameJa}</${tag}>
-      <div class="card-sub"><span class="badge ${c.rev ? 'rev' : 'up'}">${orientLabel(c)}</span><span class="en">${c.card.nameEn.toUpperCase()}</span></div>
+      <div class="card-sub"><span class="badge ${c.rev ? 'rev' : 'up'}">${orientLabel(c)}</span>${kindChip(c.card)}</div>
+      <span class="en">${c.card.nameEn.toUpperCase()}</span>
     </div>`;
   }
   function thumbHtml(c, uid) {
@@ -498,6 +513,7 @@
         <summary>キーワード・基本の意味・このポジションについて</summary>
         <ul class="keywords" aria-label="キーワード">${keywordsOf(c).map((k) => `<li>${k}</li>`).join('')}</ul>
         <p class="sheet-basic"><span>基本の意味</span>${c.rev ? c.card.meaning.rev : c.card.meaning.up}</p>
+        <p class="sheet-basic"><span>${c.card.arcana === 'major' ? '大アルカナ' : `小アルカナ・${SUIT_INFO[c.card.suit].name}`}</span>${c.card.arcana === 'major' ? ARCANA_NOTE.major : ARCANA_NOTE.minor(c.card.suit)}</p>
         <p class="sheet-basic"><span>読み方</span>${FRAME_LABEL[POS_FRAME[c.pos]]}読んでいます。</p>
       </details>`;
     const nextBtn = $('sheet-next');
