@@ -31,6 +31,29 @@
   const wait = (ms) => new Promise((r) => setTimeout(r, REDUCED.matches ? 0 : ms));
 
   const state = { genre: null, spread: [], next: 0, busy: false };
+  const STORAGE_KEY = 'celtic-cross:v1';
+
+  function saveState() {
+    try {
+      if (!state.genre) { sessionStorage.removeItem(STORAGE_KEY); return; }
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify({
+        genre: state.genre,
+        next: state.next,
+        cards: state.spread.map((c) => [c.card.id, c.rev ? 1 : 0]),
+      }));
+    } catch (e) { /* 保存できない環境では何もしない */ }
+  }
+  function loadState() {
+    try {
+      const raw = sessionStorage.getItem(STORAGE_KEY);
+      if (!raw) return null;
+      const d = JSON.parse(raw);
+      if (!GENRES.some((g) => g.id === d.genre) || !Array.isArray(d.cards) || d.cards.length !== 10) return null;
+      const spread = d.cards.map(([id, rev], i) => ({ pos: i + 1, card: CARDS.find((c) => c.id === id), rev: rev === 1 }));
+      if (spread.some((c) => !c.card)) return null;
+      return { genre: d.genre, next: Math.min(10, Math.max(0, d.next | 0)), spread };
+    } catch (e) { return null; }
+  }
 
   // crypto.getRandomValues を使った一様乱数
   function randInt(n) {
@@ -90,9 +113,43 @@
     state.spread = draw();
     state.next = 0;
     state.busy = true;
-    const g = GENRES.find((x) => x.id === genreId);
+    enterSpread();
+    renderSpread();
+    renderProgress();
+    saveState();
+    setStatus('カードを切っています…', true);
+    await dealSequence();
+    state.busy = false;
+    markNext();
+    updateStatus();
+    $('btn-flip').focus({ preventScroll: true });
+  }
+
+  // リロード後に途中の状態へ戻す（演出なし）
+  function resume(saved) {
+    state.genre = saved.genre;
+    state.spread = saved.spread;
+    state.next = saved.next;
+    state.busy = false;
+    enterSpread();
+    renderSpread();
+    renderProgress();
+    const root = $('spread');
+    root.querySelector('.deck').remove();
+    root.querySelectorAll('.slot').forEach((slot) => slot.classList.remove('is-undealt'));
+    state.spread.slice(0, state.next).forEach((c) => {
+      root.querySelector(`.card[data-pos="${c.pos}"]`).classList.add('is-flipped');
+      appendEntry(c);
+    });
+    if (state.next >= 10) buildSummary();
+    markNext();
+    updateStatus();
+  }
+
+  function enterSpread() {
+    const g = GENRES.find((x) => x.id === state.genre);
     $('genre-chip').textContent = `${g.name}の占い`;
-    $('health-notice').hidden = genreId !== 'health';
+    $('health-notice').hidden = state.genre !== 'health';
     $('screen-genre').hidden = true;
     $('screen-spread').hidden = false;
     document.body.classList.add('in-spread');
@@ -102,14 +159,6 @@
     $('summary-body').innerHTML = '';
     $('summary-strip').innerHTML = '';
     window.scrollTo({ top: 0, behavior: 'auto' });
-    renderSpread();
-    renderProgress();
-    setStatus('カードを切っています…', true);
-    await dealSequence();
-    state.busy = false;
-    markNext();
-    updateStatus();
-    $('btn-flip').focus({ preventScroll: true });
   }
 
   function renderSpread() {
@@ -262,6 +311,7 @@
     appendEntry(c);
     markNext();
     updateStatus();
+    saveState();
     if (state.next >= 10) buildSummary();
     await wait(AFTER_FLIP_MS);
     state.busy = false;
@@ -341,6 +391,58 @@
     dlg.close();
   }
 
+  // シートを下に引っ張って閉じる
+  function setupSheetDrag() {
+    const dlg = $('card-sheet');
+    const scroller = $('sheet-scroll');
+    let startY = 0, dy = 0, dragging = false, startT = 0;
+    const CLOSE_PX = 110, CLOSE_VEL = 0.6;
+    dlg.addEventListener('touchstart', (e) => {
+      if (e.touches.length !== 1) return;
+      startY = e.touches[0].clientY;
+      startT = performance.now();
+      dy = 0;
+      dragging = false;
+    }, { passive: true });
+    dlg.addEventListener('touchmove', (e) => {
+      if (e.touches.length !== 1) return;
+      const y = e.touches[0].clientY - startY;
+      // 本文を上端まで戻した状態で下へ引いたときだけ、シート全体を追従させる
+      if (!dragging) {
+        if (y > 8 && scroller.scrollTop <= 0) { dragging = true; dlg.classList.add('is-dragging'); }
+        else return;
+      }
+      dy = Math.max(0, y);
+      dlg.style.transform = `translateY(${dy}px)`;
+      dlg.style.setProperty('--drag', Math.min(1, dy / 300));
+      e.preventDefault();
+    }, { passive: false });
+    const end = async () => {
+      if (!dragging) return;
+      dragging = false;
+      dlg.classList.remove('is-dragging');
+      const vel = dy / Math.max(1, performance.now() - startT);
+      if (dy > CLOSE_PX || vel > CLOSE_VEL) {
+        dlg.classList.add('is-flinging');
+        dlg.style.transform = 'translateY(110%)';
+        await wait(200);
+        dlg.classList.remove('is-flinging');
+        dlg.style.transform = '';
+        dlg.style.removeProperty('--drag');
+        unlockScroll();
+        dlg.close();
+      } else {
+        dlg.classList.add('is-flinging');
+        dlg.style.transform = '';
+        dlg.style.removeProperty('--drag');
+        await wait(200);
+        dlg.classList.remove('is-flinging');
+      }
+    };
+    dlg.addEventListener('touchend', end);
+    dlg.addEventListener('touchcancel', end);
+  }
+
   function openSheet(c, fromFlip) {
     const p = POSITIONS[c.pos - 1];
     const dlg = $('card-sheet');
@@ -418,6 +520,7 @@
     $('screen-genre').hidden = false;
     document.body.classList.remove('in-spread', 'is-done');
     state.genre = null;
+    saveState();
     window.scrollTo({ top: 0, behavior: 'auto' });
     const first = document.querySelector('.genre-btn');
     if (first) first.focus({ preventScroll: true });
@@ -425,6 +528,9 @@
 
   // --- 初期化 ---
   renderGenres();
+  setupSheetDrag();
+  const saved = loadState();
+  if (saved) resume(saved);
   $('btn-again').addEventListener('click', () => { if (!state.busy) start(state.genre); });
   $('btn-again-2').addEventListener('click', () => { if (!state.busy) start(state.genre); });
   $('btn-change').addEventListener('click', backToGenres);
