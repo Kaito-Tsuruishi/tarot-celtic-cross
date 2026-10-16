@@ -14,6 +14,31 @@ for (const f of ORDER) {
 }
 console.log(`cards: ${cards.length}`);
 
+// 時間枠別の文（data/frames/*.json）を統合する。無い枠は現在枠の文で埋める
+const FRAMES = ['inner', 'past', 'future'];
+const framesById = {};
+for (const f of fs.readdirSync(path.join(root, 'data', 'frames')).filter((x) => x.endsWith('.json')).sort()) {
+  for (const c of JSON.parse(fs.readFileSync(path.join(root, 'data', 'frames', f), 'utf8'))) {
+    framesById[c.id] = framesById[c.id] || {};
+    for (const [g, v] of Object.entries(c.frames)) framesById[c.id][g] = v;
+  }
+}
+let filled = 0, missing = 0;
+for (const c of cards) {
+  for (const [g, v] of Object.entries(c.genres)) {
+    const fr = (framesById[c.id] || {})[g] || {};
+    for (const o of ['up', 'rev']) {
+      const now = v[o];
+      const out = { now };
+      for (const k of FRAMES) {
+        if (fr[o] && fr[o][k]) { out[k] = fr[o][k]; filled++; } else { out[k] = now; missing++; }
+      }
+      v[o] = out;
+    }
+  }
+}
+console.log(`frames: filled ${filled} / missing ${missing}`);
+
 const dataJs = `const CARDS = ${JSON.stringify(cards)};`;
 const html = read('src/index.html')
   .replace('<!--DATA-->', `<script>${dataJs.replace(/<\//g, '<\\/')}</script>`)

@@ -13,7 +13,7 @@ const Reading = (() => {
     swords: '冷静に考えて言葉にすること',
     pentacles: '現実的な足場やお金・体の面',
   };
-  const GENRE_SUIT = { love: 'cups', relation: 'cups', work: 'pentacles', money: 'pentacles', health: 'pentacles', general: null };
+  const GENRE_SUIT = { love: 'cups', relation: 'cups', work: 'pentacles', general: null };
   const RANK_THEME = {
     1: '始まりと種', 2: '選択と均衡', 3: '成長と協力', 4: '安定と足場', 5: '変化と葛藤',
     6: '調和と回復', 7: '試練と見直し', 8: '前進と力', 9: '到達の目前', 10: '完結と次の周期',
@@ -330,7 +330,7 @@ const Reading = (() => {
       pairs: pairSection(spread),
       final: {
         card: c10,
-        text: c10.rev ? c10.card.genres[genre].rev : c10.card.genres[genre].up,
+        text: (c10.rev ? c10.card.genres[genre].rev : c10.card.genres[genre].up).future,
       },
     };
   }

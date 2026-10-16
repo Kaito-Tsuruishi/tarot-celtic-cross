@@ -4,10 +4,11 @@
     { id: 'general', name: '総合', en: 'GENERAL', desc: 'いまの流れ全体を見る' },
     { id: 'love', name: '恋愛', en: 'LOVE', desc: '相手との関係、片思い、パートナーシップ' },
     { id: 'work', name: '仕事', en: 'WORK', desc: '職場、キャリア、取り組んでいること' },
-    { id: 'money', name: '金運', en: 'MONEY', desc: '収入と支出、お金との付き合い方' },
     { id: 'relation', name: '人間関係', en: 'RELATIONSHIPS', desc: '友人、家族、周囲との関わり' },
-    { id: 'health', name: '健康', en: 'HEALTH', desc: '体調、生活リズム、心身のバランス' },
   ];
+  // ポジションごとに使う時間枠。now=いま働いている影響 / inner=意識と心の奥 / past=過ぎ去りつつある影響 / future=これから・結末
+  const POS_FRAME = { 1: 'now', 2: 'now', 7: 'now', 8: 'now', 3: 'inner', 4: 'inner', 9: 'inner', 5: 'past', 6: 'future', 10: 'future' };
+  const FRAME_LABEL = { now: 'いま働いている影響として', inner: '心の内側の動きとして', past: '過ぎ去りつつある影響として', future: 'これから向かう流れとして' };
   const POSITIONS = [
     { n: 1, name: '現状', desc: 'あなたや物事全体を包んでいる空気。いま働いている影響。' },
     { n: 2, name: '障害・課題', desc: '立ちはだかっているものの性質。良いカードなら障害は深刻ではないか、良いものが裏目に出ていると読む。' },
@@ -35,7 +36,7 @@
     state.busy = v;
     document.body.classList.toggle('is-busy', v);
   }
-  const STORAGE_KEY = 'celtic-cross:v1';
+  const STORAGE_KEY = 'celtic-cross:v2';
 
   function saveState() {
     try {
@@ -81,7 +82,10 @@
     return shuffle(CARDS).slice(0, 10).map((card, i) => ({ pos: i + 1, card, rev: randInt(2) === 1 }));
   }
   const orientLabel = (c) => (c.rev ? '逆位置' : '正位置');
-  const genreText = (c) => (c.rev ? c.card.genres[state.genre].rev : c.card.genres[state.genre].up);
+  const genreText = (c) => {
+    const t = c.rev ? c.card.genres[state.genre].rev : c.card.genres[state.genre].up;
+    return t[POS_FRAME[c.pos]] || t.now;
+  };
   const keywordsOf = (c) => (c.rev ? c.card.keywords.rev : c.card.keywords.up);
   function cardLineHtml(c, tag = 'h3') {
     return `<div class="card-line">
@@ -163,7 +167,6 @@
   function enterSpread() {
     const g = GENRES.find((x) => x.id === state.genre);
     $('genre-chip').textContent = `${g.name}の占い`;
-    $('health-notice').hidden = state.genre !== 'health';
     $('screen-genre').hidden = true;
     $('screen-spread').hidden = false;
     document.body.classList.add('in-spread');
@@ -482,7 +485,7 @@
     const isLast = state.next >= 10;
     const nextLabel = isLast ? '総合リーディングを見る' : (c.pos === state.next ? '次のカードをめくる' : 'スプレッドに戻る');
     $('sheet-body').innerHTML = `
-      <div class="sheet-pos">${c.pos} 枚目<span class="sep">・</span>${p.name}</div>
+      <div class="sheet-pos">${c.pos} 枚目<span class="sep">・</span>${p.name}<span class="frame">${FRAME_LABEL[POS_FRAME[c.pos]]}</span></div>
       <div class="sheet-hero">
         <div class="sheet-art${c.rev ? ' is-reversed' : ''}">${Art.face(c.card, 200 + c.pos)}</div>
         ${cardLineHtml(c, 'h2')}

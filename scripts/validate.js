@@ -3,7 +3,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const GENRES = ['general', 'love', 'work', 'money', 'relation', 'health'];
+const GENRES = ['general', 'love', 'work', 'relation'];
 const SUITS = ['wands', 'cups', 'swords', 'pentacles'];
 const SUIT_JA = { wands: 'ワンド', cups: 'カップ', swords: 'ソード', pentacles: 'ペンタクル' };
 const SUIT_EN = { wands: 'Wands', cups: 'Cups', swords: 'Swords', pentacles: 'Pentacles' };

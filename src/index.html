@@ -68,7 +68,7 @@ header.site .en { display: block; font-size: 0.68rem; letter-spacing: 0.35em; co
 @media (max-width: 480px) { .lead br { display: none; } }
 .genres { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, 1fr); grid-auto-rows: 1fr; gap: 12px; }
 .genres li { animation: rise 420ms ease-out both; animation-delay: calc(var(--i) * 60ms); }
-@media (min-width: 560px) { .genres { grid-template-columns: repeat(3, 1fr); } }
+
 .genre-btn {
   width: 100%; height: 100%; min-height: 96px; padding: 14px 12px; text-align: left; cursor: pointer;
   color: var(--parchment); background: linear-gradient(180deg, var(--desk-2), #1b1511);
@@ -247,6 +247,7 @@ body.in-spread.is-done { padding-bottom: 24px; }
 .sheet-grip { width: 44px; height: 5px; border-radius: 3px; background: var(--brass); margin: 2px auto 14px; opacity: 0.8; }
 .sheet-pos { font-size: 0.74rem; letter-spacing: 0.2em; color: var(--brass); text-align: center; margin-bottom: 12px; }
 .sheet-pos .sep { margin: 0 0.3em; color: var(--brass-dim); }
+.sheet-pos .frame { display: block; font-size: 0.7rem; letter-spacing: 0.1em; color: var(--parchment-dim); margin-top: 2px; }
 .sheet-hero { display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center; }
 .sheet-hero .card-sub { justify-content: center; }
 .sheet-hero .card-line h2 { font-size: 1.4rem; }
@@ -344,9 +345,8 @@ footer.site { text-align: center; font-size: 0.72rem; color: var(--brass-dim); m
   <main>
     <section id="screen-genre" aria-labelledby="genre-heading">
       <h2 id="genre-heading" class="visually-hidden">ジャンルを選ぶ</h2>
-      <p class="lead">占いたいテーマを選んでください。<br>78 枚から 10 枚を引き、ケルト十字に並べます。</p>
+      <p class="lead">占いたいテーマを選んでください。<br>78 枚から 10 枚を引き、ケルト十字に並べます。<br>解釈は、カードが置かれた位置（現在・内面・過去・未来）に合わせて変わります。</p>
       <ul class="genres" id="genre-list"></ul>
-      <p class="notice">健康のテーマは医療の代わりではありません。体調が気になるときは医療機関に相談してください。</p>
     </section>
 
     <section id="screen-spread" hidden aria-labelledby="spread-heading">
@@ -358,7 +358,6 @@ footer.site { text-align: center; font-size: 0.72rem; color: var(--brass-dim); m
           <button type="button" class="btn" id="btn-again">もう一度占う</button>
         </div>
       </div>
-      <p class="notice" id="health-notice" hidden>この占いは医療の代わりではありません。体調が気になるときは医療機関に相談してください。</p>
 
       <div class="progress" id="progress" role="status" aria-label="0 / 10 枚めくりました"></div>
 
