@@ -312,6 +312,23 @@
   }
 
   // --- 拡大シート ---
+  // シートを開いている間は背景のページをスクロールさせない（iOS では overflow: hidden だけでは効かない）
+  let lockedY = null;
+  function lockScroll() {
+    if (lockedY !== null) return;
+    lockedY = window.scrollY;
+    document.body.style.top = `-${lockedY}px`;
+    document.body.classList.add('is-locked');
+  }
+  function unlockScroll() {
+    if (lockedY === null) return;
+    const y = lockedY;
+    lockedY = null;
+    document.body.classList.remove('is-locked');
+    document.body.style.top = '';
+    window.scrollTo(0, y);
+  }
+
   async function closeSheet() {
     const dlg = $('card-sheet');
     if (!dlg.open) return;
@@ -320,6 +337,7 @@
       await wait(SHEET_CLOSE_MS);
       dlg.classList.remove('is-closing');
     }
+    unlockScroll();
     dlg.close();
   }
 
@@ -353,7 +371,7 @@
     };
     $('sheet-close').onclick = () => closeSheet();
     dlg.classList.toggle('from-flip', !!fromFlip);
-    if (!dlg.open) dlg.showModal();
+    if (!dlg.open) { lockScroll(); dlg.showModal(); }
     $('sheet-scroll').scrollTop = 0;
     nextBtn.focus({ preventScroll: true });
   }
@@ -411,6 +429,7 @@
   $('btn-again-2').addEventListener('click', () => { if (!state.busy) start(state.genre); });
   $('btn-change').addEventListener('click', backToGenres);
   $('btn-change-2').addEventListener('click', backToGenres);
-  // シートの外側（背景）をタップで閉じる
+  // シートの外側（背景）をタップで閉じる。Esc などで閉じた場合もスクロール固定を解除する
   $('card-sheet').addEventListener('click', (e) => { if (e.target === e.currentTarget) closeSheet(); });
+  $('card-sheet').addEventListener('close', unlockScroll);
 })();
