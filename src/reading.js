@@ -29,7 +29,19 @@ const Reading = (() => {
     return base === 1 ? 0 : base === -1 ? 0 : -0.5; // 逆位置は「弱まり」「峠越え」として中立寄りに
   }
 
+  // seed を渡すと同じスプレッドで同じ文面になる（リロード復元用）。無ければ暗号乱数
+  let rng = null;
+  function mulberry32(a) {
+    return () => {
+      a = (a + 0x6d2b79f5) >>> 0;
+      let t = a;
+      t = Math.imul(t ^ (t >>> 15), t | 1);
+      t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
   function rnd(n) {
+    if (rng) return Math.floor(rng() * n);
     const a = new Uint32Array(1);
     crypto.getRandomValues(a);
     return a[0] % n;
@@ -309,7 +321,8 @@ const Reading = (() => {
     return out;
   }
 
-  function build(spread, genre) {
+  function build(spread, genre, seed) {
+    rng = Number.isInteger(seed) ? mulberry32(seed) : null;
     spread.genre = genre;
     const c10 = spread.find((x) => x.pos === 10);
     return {

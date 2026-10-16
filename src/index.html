@@ -26,17 +26,19 @@
   --deal-ms: 560ms;
 }
 * { box-sizing: border-box; }
-html { -webkit-text-size-adjust: 100%; overscroll-behavior-y: none; }
+html {
+  -webkit-text-size-adjust: 100%; overscroll-behavior-y: none; min-height: 100%;
+  background:
+    radial-gradient(ellipse 120% 70% at 50% -10%, #3a2d21 0%, transparent 60%),
+    radial-gradient(ellipse 80% 60% at 50% 110%, #0d0a07 0%, transparent 70%),
+    var(--desk);
+}
 body { overscroll-behavior-y: none; }
 body {
   margin: 0;
   min-height: 100vh;
   font-family: var(--serif);
   color: var(--parchment);
-  background:
-    radial-gradient(ellipse 120% 70% at 50% -10%, #3a2d21 0%, transparent 60%),
-    radial-gradient(ellipse 80% 60% at 50% 110%, #0d0a07 0%, transparent 70%),
-    var(--desk);
   line-height: 1.85;
   letter-spacing: 0.02em;
 }
@@ -54,6 +56,9 @@ body.in-spread header.site .en { display: none; }
 body.in-spread header.site .rule-line { margin-top: 8px; }
 body.in-spread { padding-bottom: 96px; }
 body.is-locked { position: fixed; left: 0; right: 0; width: 100%; overflow: hidden; }
+body.is-busy .card, body.is-busy .thumb-btn, body.is-busy .strip-item { pointer-events: none; }
+body.is-busy .toolbar .btn { pointer-events: none; opacity: 0.45; }
+.card, .thumb, .sheet-art, .deck { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
 header.site h1 { font-size: 1.5rem; font-weight: 500; letter-spacing: 0.3em; margin: 0; text-indent: 0.3em; }
 header.site .en { display: block; font-size: 0.68rem; letter-spacing: 0.35em; color: var(--brass-dim); margin-top: 4px; text-indent: 0.35em; }
 .rule-line { width: 64px; height: 1px; margin: 16px auto 0; background: linear-gradient(90deg, transparent, var(--brass), transparent); }
@@ -226,7 +231,8 @@ body.in-spread.is-done { padding-bottom: 24px; }
 }
 .sheet:not([open]) { display: none; }
 .sheet::backdrop { background: rgba(8,6,4,0.66); }
-.sheet { touch-action: none; }
+.sheet { touch-action: pinch-zoom; }
+.sheet.is-dragging .sheet-actions, .sheet.is-flinging .sheet-actions { pointer-events: none; }
 .sheet[open] { animation: sheet-up 380ms cubic-bezier(0.2, 0.8, 0.2, 1); }
 .sheet[open].is-closing { animation: sheet-down 220ms ease-in forwards; }
 .sheet.is-dragging { animation: none; transition: none; }
@@ -237,7 +243,7 @@ body.in-spread.is-done { padding-bottom: 24px; }
 @keyframes sheet-down { to { transform: translateY(40px); opacity: 0; } }
 @keyframes fade-out { to { opacity: 0; } }
 @keyframes sheet-up { from { transform: translateY(40px); opacity: 0; } to { transform: none; opacity: 1; } }
-.sheet-scroll { overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y; padding: 8px 20px 12px; -webkit-overflow-scrolling: touch; }
+.sheet-scroll { overflow-y: auto; overscroll-behavior: none; touch-action: pan-y pinch-zoom; padding: 8px 20px 12px; -webkit-overflow-scrolling: touch; outline: none; }
 .sheet-grip { width: 44px; height: 5px; border-radius: 3px; background: var(--brass); margin: 2px auto 14px; opacity: 0.8; }
 .sheet-pos { font-size: 0.74rem; letter-spacing: 0.2em; color: var(--brass); text-align: center; margin-bottom: 12px; }
 .sheet-pos .sep { margin: 0 0.3em; color: var(--brass-dim); }
@@ -388,7 +394,7 @@ footer.site { text-align: center; font-size: 0.72rem; color: var(--brass-dim); m
 </div>
 
 <dialog class="sheet" id="card-sheet" aria-labelledby="sheet-heading">
-  <div class="sheet-scroll" id="sheet-scroll">
+  <div class="sheet-scroll" id="sheet-scroll" tabindex="0">
     <div class="sheet-grip" aria-hidden="true"></div>
     <h2 id="sheet-heading" class="visually-hidden">カードの解釈</h2>
     <div id="sheet-body"></div>

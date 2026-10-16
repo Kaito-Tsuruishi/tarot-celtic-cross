@@ -26,17 +26,19 @@
   --deal-ms: 560ms;
 }
 * { box-sizing: border-box; }
-html { -webkit-text-size-adjust: 100%; overscroll-behavior-y: none; }
+html {
+  -webkit-text-size-adjust: 100%; overscroll-behavior-y: none; min-height: 100%;
+  background:
+    radial-gradient(ellipse 120% 70% at 50% -10%, #3a2d21 0%, transparent 60%),
+    radial-gradient(ellipse 80% 60% at 50% 110%, #0d0a07 0%, transparent 70%),
+    var(--desk);
+}
 body { overscroll-behavior-y: none; }
 body {
   margin: 0;
   min-height: 100vh;
   font-family: var(--serif);
   color: var(--parchment);
-  background:
-    radial-gradient(ellipse 120% 70% at 50% -10%, #3a2d21 0%, transparent 60%),
-    radial-gradient(ellipse 80% 60% at 50% 110%, #0d0a07 0%, transparent 70%),
-    var(--desk);
   line-height: 1.85;
   letter-spacing: 0.02em;
 }
@@ -54,6 +56,9 @@ body.in-spread header.site .en { display: none; }
 body.in-spread header.site .rule-line { margin-top: 8px; }
 body.in-spread { padding-bottom: 96px; }
 body.is-locked { position: fixed; left: 0; right: 0; width: 100%; overflow: hidden; }
+body.is-busy .card, body.is-busy .thumb-btn, body.is-busy .strip-item { pointer-events: none; }
+body.is-busy .toolbar .btn { pointer-events: none; opacity: 0.45; }
+.card, .thumb, .sheet-art, .deck { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
 header.site h1 { font-size: 1.5rem; font-weight: 500; letter-spacing: 0.3em; margin: 0; text-indent: 0.3em; }
 header.site .en { display: block; font-size: 0.68rem; letter-spacing: 0.35em; color: var(--brass-dim); margin-top: 4px; text-indent: 0.35em; }
 .rule-line { width: 64px; height: 1px; margin: 16px auto 0; background: linear-gradient(90deg, transparent, var(--brass), transparent); }
@@ -226,7 +231,8 @@ body.in-spread.is-done { padding-bottom: 24px; }
 }
 .sheet:not([open]) { display: none; }
 .sheet::backdrop { background: rgba(8,6,4,0.66); }
-.sheet { touch-action: none; }
+.sheet { touch-action: pinch-zoom; }
+.sheet.is-dragging .sheet-actions, .sheet.is-flinging .sheet-actions { pointer-events: none; }
 .sheet[open] { animation: sheet-up 380ms cubic-bezier(0.2, 0.8, 0.2, 1); }
 .sheet[open].is-closing { animation: sheet-down 220ms ease-in forwards; }
 .sheet.is-dragging { animation: none; transition: none; }
@@ -237,7 +243,7 @@ body.in-spread.is-done { padding-bottom: 24px; }
 @keyframes sheet-down { to { transform: translateY(40px); opacity: 0; } }
 @keyframes fade-out { to { opacity: 0; } }
 @keyframes sheet-up { from { transform: translateY(40px); opacity: 0; } to { transform: none; opacity: 1; } }
-.sheet-scroll { overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y; padding: 8px 20px 12px; -webkit-overflow-scrolling: touch; }
+.sheet-scroll { overflow-y: auto; overscroll-behavior: none; touch-action: pan-y pinch-zoom; padding: 8px 20px 12px; -webkit-overflow-scrolling: touch; outline: none; }
 .sheet-grip { width: 44px; height: 5px; border-radius: 3px; background: var(--brass); margin: 2px auto 14px; opacity: 0.8; }
 .sheet-pos { font-size: 0.74rem; letter-spacing: 0.2em; color: var(--brass); text-align: center; margin-bottom: 12px; }
 .sheet-pos .sep { margin: 0 0.3em; color: var(--brass-dim); }
@@ -388,7 +394,7 @@ footer.site { text-align: center; font-size: 0.72rem; color: var(--brass-dim); m
 </div>
 
 <dialog class="sheet" id="card-sheet" aria-labelledby="sheet-heading">
-  <div class="sheet-scroll" id="sheet-scroll">
+  <div class="sheet-scroll" id="sheet-scroll" tabindex="0">
     <div class="sheet-grip" aria-hidden="true"></div>
     <h2 id="sheet-heading" class="visually-hidden">カードの解釈</h2>
     <div id="sheet-body"></div>
@@ -567,7 +573,19 @@ const Reading = (() => {
     return base === 1 ? 0 : base === -1 ? 0 : -0.5; // 逆位置は「弱まり」「峠越え」として中立寄りに
   }
 
+  // seed を渡すと同じスプレッドで同じ文面になる（リロード復元用）。無ければ暗号乱数
+  let rng = null;
+  function mulberry32(a) {
+    return () => {
+      a = (a + 0x6d2b79f5) >>> 0;
+      let t = a;
+      t = Math.imul(t ^ (t >>> 15), t | 1);
+      t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
   function rnd(n) {
+    if (rng) return Math.floor(rng() * n);
     const a = new Uint32Array(1);
     crypto.getRandomValues(a);
     return a[0] % n;
@@ -847,7 +865,8 @@ const Reading = (() => {
     return out;
   }
 
-  function build(spread, genre) {
+  function build(spread, genre, seed) {
+    rng = Number.isInteger(seed) ? mulberry32(seed) : null;
     spread.genre = genre;
     const c10 = spread.find((x) => x.pos === 10);
     return {
@@ -896,7 +915,11 @@ const Reading = (() => {
   const $ = (id) => document.getElementById(id);
   const wait = (ms) => new Promise((r) => setTimeout(r, REDUCED.matches ? 0 : ms));
 
-  const state = { genre: null, spread: [], next: 0, busy: false };
+  const state = { genre: null, spread: [], next: 0, busy: false, seed: 0 };
+  function setBusy(v) {
+    state.busy = v;
+    document.body.classList.toggle('is-busy', v);
+  }
   const STORAGE_KEY = 'celtic-cross:v1';
 
   function saveState() {
@@ -905,6 +928,8 @@ const Reading = (() => {
       sessionStorage.setItem(STORAGE_KEY, JSON.stringify({
         genre: state.genre,
         next: state.next,
+        seed: state.seed,
+        done: document.body.classList.contains('is-done'),
         cards: state.spread.map((c) => [c.card.id, c.rev ? 1 : 0]),
       }));
     } catch (e) { /* 保存できない環境では何もしない */ }
@@ -917,7 +942,7 @@ const Reading = (() => {
       if (!GENRES.some((g) => g.id === d.genre) || !Array.isArray(d.cards) || d.cards.length !== 10) return null;
       const spread = d.cards.map(([id, rev], i) => ({ pos: i + 1, card: CARDS.find((c) => c.id === id), rev: rev === 1 }));
       if (spread.some((c) => !c.card)) return null;
-      return { genre: d.genre, next: Math.min(10, Math.max(0, d.next | 0)), spread };
+      return { genre: d.genre, next: Math.min(10, Math.max(0, d.next | 0)), spread, seed: d.seed >>> 0, done: !!d.done };
     } catch (e) { return null; }
   }
 
@@ -978,14 +1003,18 @@ const Reading = (() => {
     state.genre = genreId;
     state.spread = draw();
     state.next = 0;
-    state.busy = true;
-    enterSpread();
-    renderSpread();
-    renderProgress();
-    saveState();
-    setStatus('カードを切っています…', true);
-    await dealSequence();
-    state.busy = false;
+    state.seed = randInt(0x7fffffff);
+    setBusy(true);
+    try {
+      enterSpread();
+      renderSpread();
+      renderProgress();
+      saveState();
+      setStatus('カードを切っています…', true);
+      await dealSequence();
+    } finally {
+      setBusy(false);
+    }
     markNext();
     updateStatus();
     $('btn-flip').focus({ preventScroll: true });
@@ -996,7 +1025,8 @@ const Reading = (() => {
     state.genre = saved.genre;
     state.spread = saved.spread;
     state.next = saved.next;
-    state.busy = false;
+    state.seed = saved.seed;
+    setBusy(false);
     enterSpread();
     renderSpread();
     renderProgress();
@@ -1007,7 +1037,10 @@ const Reading = (() => {
       root.querySelector(`.card[data-pos="${c.pos}"]`).classList.add('is-flipped');
       appendEntry(c);
     });
-    if (state.next >= 10) buildSummary();
+    if (state.next >= 10) {
+      buildSummary();
+      if (saved.done) document.body.classList.add('is-done');
+    }
     markNext();
     updateStatus();
   }
@@ -1138,7 +1171,7 @@ const Reading = (() => {
 
   function setStatus(text, busy) {
     $('status-text').textContent = text;
-    $('btn-flip').hidden = !!busy;
+    $('btn-flip').disabled = !!busy;
   }
   function updateStatus() {
     const btn = $('btn-flip');
@@ -1155,7 +1188,7 @@ const Reading = (() => {
   }
 
   function onCardClick(pos) {
-    if (pos <= state.next) { openSheet(state.spread[pos - 1], false); return; }
+    if (pos <= state.next) { openSheet(state.spread[pos - 1]); return; }
     flip(pos);
   }
 
@@ -1163,25 +1196,27 @@ const Reading = (() => {
     if (state.busy || pos !== state.next + 1) return;
     const c = state.spread[pos - 1];
     const btn = document.querySelector(`.card[data-pos="${pos}"]`);
-    state.busy = true;
-    setStatus(`${pos} 枚目「${POSITIONS[pos - 1].name}」をめくっています…`, true);
-    await bringIntoView(btn);
-    btn.classList.add('is-flipped', 'is-flipping');
-    btn.classList.remove('is-next');
-    btn.disabled = true;
-    await wait(FLIP_MS);
-    btn.classList.remove('is-flipping');
-    btn.classList.add('is-glow');
-    setTimeout(() => btn.classList.remove('is-glow'), 1200);
-    state.next = pos;
-    appendEntry(c);
-    markNext();
-    updateStatus();
-    saveState();
-    if (state.next >= 10) buildSummary();
-    await wait(AFTER_FLIP_MS);
-    state.busy = false;
-    openSheet(c, true);
+    setBusy(true);
+    try {
+      setStatus(`${pos} 枚目「${POSITIONS[pos - 1].name}」をめくっています…`, true);
+      await bringIntoView(btn);
+      btn.classList.add('is-flipped', 'is-flipping');
+      btn.classList.remove('is-next');
+      await wait(FLIP_MS);
+      btn.classList.remove('is-flipping');
+      btn.classList.add('is-glow');
+      setTimeout(() => btn.classList.remove('is-glow'), 1200);
+      state.next = pos;
+      appendEntry(c);
+      markNext();
+      updateStatus();
+      saveState();
+      if (state.next >= 10) buildSummary();
+      await wait(AFTER_FLIP_MS);
+    } finally {
+      setBusy(false);
+    }
+    openSheet(c);
   }
 
   // カードが画面外（または操作バーの裏）にあれば中央へスクロールし、完了を待つ
@@ -1223,7 +1258,7 @@ const Reading = (() => {
           <p class="text">${genreText(c)}</p>
         </div>
       </div>`;
-    li.querySelector('.thumb-btn').addEventListener('click', () => openSheet(c, false));
+    li.querySelector('.thumb-btn').addEventListener('click', () => openSheet(c));
     $('reading').appendChild(li);
   }
 
@@ -1261,35 +1296,51 @@ const Reading = (() => {
   function setupSheetDrag() {
     const dlg = $('card-sheet');
     const scroller = $('sheet-scroll');
-    let startY = 0, dy = 0, dragging = false, startT = 0;
-    const CLOSE_PX = 110, CLOSE_VEL = 0.6;
+    let touchId = null, startY = 0, dy = 0, dragging = false, startT = 0, closing = false;
+    const CLOSE_PX = 110, CLOSE_VEL = 0.6, START_PX = 8;
+    const findTouch = (e) => [...e.changedTouches].find((t) => t.identifier === touchId);
     dlg.addEventListener('touchstart', (e) => {
-      if (e.touches.length !== 1) return;
-      startY = e.touches[0].clientY;
+      if (closing) return;
+      const t = e.changedTouches[0];
+      touchId = t.identifier;
+      startY = t.clientY;
       startT = performance.now();
       dy = 0;
       dragging = false;
     }, { passive: true });
     dlg.addEventListener('touchmove', (e) => {
-      if (e.touches.length !== 1) return;
-      const y = e.touches[0].clientY - startY;
-      // 本文を上端まで戻した状態で下へ引いたときだけ、シート全体を追従させる
+      if (closing) return;
+      const t = findTouch(e);
+      if (!t) return;
+      const y = t.clientY - startY;
       if (!dragging) {
-        if (y > 8 && scroller.scrollTop <= 0) { dragging = true; dlg.classList.add('is-dragging'); }
-        else return;
+        // 本文が上端にあって下へ引いているなら、ブラウザのスクロールに渡さず自分で扱う
+        if (y > 0 && scroller.scrollTop <= 0) {
+          if (e.cancelable) e.preventDefault();
+          if (y > START_PX) {
+            dragging = true;
+            startY = t.clientY; // ここを基準にして跳ばないようにする
+            startT = performance.now();
+            dlg.classList.add('is-dragging');
+          }
+        }
+        return;
       }
-      dy = Math.max(0, y);
+      dy = Math.max(0, t.clientY - startY);
       dlg.style.transform = `translateY(${dy}px)`;
       dlg.style.setProperty('--drag', Math.min(1, dy / 300));
-      e.preventDefault();
+      if (e.cancelable) e.preventDefault();
     }, { passive: false });
-    const end = async () => {
+    const end = async (e) => {
+      if (!findTouch(e)) return;
+      touchId = null;
       if (!dragging) return;
       dragging = false;
       dlg.classList.remove('is-dragging');
       const vel = dy / Math.max(1, performance.now() - startT);
+      closing = true;
+      dlg.classList.add('is-flinging');
       if (dy > CLOSE_PX || vel > CLOSE_VEL) {
-        dlg.classList.add('is-flinging');
         dlg.style.transform = 'translateY(110%)';
         await wait(200);
         dlg.classList.remove('is-flinging');
@@ -1298,18 +1349,19 @@ const Reading = (() => {
         unlockScroll();
         dlg.close();
       } else {
-        dlg.classList.add('is-flinging');
         dlg.style.transform = '';
         dlg.style.removeProperty('--drag');
         await wait(200);
         dlg.classList.remove('is-flinging');
       }
+      closing = false;
     };
     dlg.addEventListener('touchend', end);
     dlg.addEventListener('touchcancel', end);
   }
 
-  function openSheet(c, fromFlip) {
+  function openSheet(c) {
+    if (state.busy) return;
     const p = POSITIONS[c.pos - 1];
     const dlg = $('card-sheet');
     const isLast = state.next >= 10;
@@ -1338,29 +1390,35 @@ const Reading = (() => {
       }
     };
     $('sheet-close').onclick = () => closeSheet();
-    dlg.classList.toggle('from-flip', !!fromFlip);
     if (!dlg.open) { lockScroll(); dlg.showModal(); }
     $('sheet-scroll').scrollTop = 0;
     nextBtn.focus({ preventScroll: true });
   }
 
-  function goToSummary() {
+  async function goToSummary() {
+    if (state.busy) return;
     document.body.classList.add('is-done');
-    const s = $('summary');
-    s.setAttribute('tabindex', '-1');
-    s.scrollIntoView({ block: 'start', behavior: REDUCED.matches ? 'auto' : 'smooth' });
-    s.focus({ preventScroll: true });
+    saveState();
+    const el = $('summary');
+    el.setAttribute('tabindex', '-1');
+    setBusy(true);
+    try {
+      await scrollTo(window.scrollY + el.getBoundingClientRect().top - 12);
+    } finally {
+      setBusy(false);
+    }
+    el.focus({ preventScroll: true });
   }
 
   function buildSummary() {
-    const r = Reading.build(state.spread, state.genre);
+    const r = Reading.build(state.spread, state.genre, state.seed);
     const c = r.final.card;
     $('summary-strip').innerHTML = state.spread.map((x) => `
       <button type="button" class="strip-item" data-pos="${x.pos}" aria-label="${x.pos} 枚目 ${POSITIONS[x.pos - 1].name}：${x.card.nameJa}、${orientLabel(x)}">
         ${thumbHtml(x, 300 + x.pos)}<span class="strip-pos">${x.pos}</span>
       </button>`).join('');
     $('summary-strip').querySelectorAll('.strip-item').forEach((b) => {
-      b.addEventListener('click', () => openSheet(state.spread[Number(b.dataset.pos) - 1], false));
+      b.addEventListener('click', () => openSheet(state.spread[Number(b.dataset.pos) - 1]));
     });
     const paras = [...r.counts, ...r.pairs].map((t) => `<p>${t}</p>`).join('');
     $('summary-body').innerHTML = `
@@ -1381,7 +1439,7 @@ const Reading = (() => {
   function backToGenres() {
     if (state.busy) return;
     const dlg = $('card-sheet');
-    if (dlg.open) dlg.close();
+    if (dlg.open) { unlockScroll(); dlg.close(); }
     $('screen-spread').hidden = true;
     $('screen-genre').hidden = false;
     document.body.classList.remove('in-spread', 'is-done');
@@ -1403,7 +1461,13 @@ const Reading = (() => {
   $('btn-change-2').addEventListener('click', backToGenres);
   // シートの外側（背景）をタップで閉じる。Esc などで閉じた場合もスクロール固定を解除する
   $('card-sheet').addEventListener('click', (e) => { if (e.target === e.currentTarget) closeSheet(); });
-  $('card-sheet').addEventListener('close', unlockScroll);
+  $('card-sheet').addEventListener('cancel', (e) => { e.preventDefault(); closeSheet(); });
+  $('card-sheet').addEventListener('close', () => {
+    unlockScroll();
+    if (document.activeElement === document.body || document.activeElement === null) {
+      $('btn-flip').focus({ preventScroll: true });
+    }
+  });
 })();
 </script>
 </body>
