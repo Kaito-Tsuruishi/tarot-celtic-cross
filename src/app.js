@@ -55,8 +55,7 @@
   function cardLineHtml(c, tag = 'h3') {
     return `<div class="card-line">
       <${tag}>${c.card.nameJa}</${tag}>
-      <span class="en">${c.card.nameEn.toUpperCase()}</span>
-      <span class="badge ${c.rev ? 'rev' : 'up'}">${orientLabel(c)}</span>
+      <div class="card-sub"><span class="badge ${c.rev ? 'rev' : 'up'}">${orientLabel(c)}</span><span class="en">${c.card.nameEn.toUpperCase()}</span></div>
     </div>`;
   }
   function thumbHtml(c, uid) {
@@ -270,18 +269,15 @@
     li.className = 'entry';
     li.id = `entry-${c.pos}`;
     li.innerHTML = `
-      <div class="entry-head">
-        <div class="pos">${c.pos}　${p.name}</div>
-        <p class="pos-desc">${p.desc}</p>
-      </div>
+      <div class="pos">${c.pos}　${p.name}</div>
       <div class="entry-body">
-        ${thumbHtml(c, 100 + c.pos)}
+        <button type="button" class="thumb-btn" aria-label="${c.card.nameJa}（${orientLabel(c)}）の詳細を見る">${thumbHtml(c, 100 + c.pos)}</button>
         <div class="entry-main">
           ${cardLineHtml(c)}
-          <ul class="keywords" aria-label="キーワード">${keywordsOf(c).map((k) => `<li>${k}</li>`).join('')}</ul>
           <p class="text">${genreText(c)}</p>
         </div>
       </div>`;
+    li.querySelector('.thumb-btn').addEventListener('click', () => openSheet(c, false));
     $('reading').appendChild(li);
   }
 
@@ -292,19 +288,18 @@
     const isLast = state.next >= 10;
     const nextLabel = isLast ? '総合リーディングを見る' : (c.pos === state.next ? '次のカードをめくる' : 'スプレッドに戻る');
     $('sheet-body').innerHTML = `
-      <div class="sheet-pos">
-        <span class="pos">${c.pos}　${p.name}</span>
-        <p class="pos-desc">${p.desc}</p>
-      </div>
-      <div class="sheet-card">
+      <div class="sheet-pos">${c.pos} 枚目<span class="sep">・</span>${p.name}</div>
+      <div class="sheet-hero">
         <div class="sheet-art${c.rev ? ' is-reversed' : ''}">${Art.face(c.card, 200 + c.pos)}</div>
-        <div class="sheet-main">
-          ${cardLineHtml(c, 'h2')}
-          <ul class="keywords" aria-label="キーワード">${keywordsOf(c).map((k) => `<li>${k}</li>`).join('')}</ul>
-        </div>
+        ${cardLineHtml(c, 'h2')}
       </div>
       <p class="sheet-text">${genreText(c)}</p>
-      <p class="sheet-basic"><span>基本の意味</span>${c.rev ? c.card.meaning.rev : c.card.meaning.up}</p>`;
+      <details class="sheet-more">
+        <summary>キーワード・基本の意味・このポジションについて</summary>
+        <ul class="keywords" aria-label="キーワード">${keywordsOf(c).map((k) => `<li>${k}</li>`).join('')}</ul>
+        <p class="sheet-basic"><span>基本の意味</span>${c.rev ? c.card.meaning.rev : c.card.meaning.up}</p>
+        <p class="sheet-basic"><span>${c.pos}　${p.name}</span>${p.desc}</p>
+      </details>`;
     const nextBtn = $('sheet-next');
     nextBtn.textContent = nextLabel;
     nextBtn.onclick = () => {
