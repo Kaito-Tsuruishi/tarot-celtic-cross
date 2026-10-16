@@ -18,7 +18,7 @@
   --oxblood: #8e3b36;
   --night: #161a24;
   --night-2: #1f2535;
-  --card-w: clamp(62px, calc((100vw - 48px - 3 * var(--gap)) / 4), 96px);
+  --card-w: clamp(62px, calc((100vw - 48px - 4 * var(--gap) - 6px) / 4), 96px);
   --card-h: calc(var(--card-w) * 5 / 3);
   --gap: 10px;
   --serif: "Hiragino Mincho ProN", "Yu Mincho", "YuMincho", "Noto Serif JP", "Iowan Old Style", "Palatino", Georgia, serif;
@@ -52,6 +52,7 @@ header.site .en { display: block; font-size: 0.68rem; letter-spacing: 0.35em; co
 
 /* ジャンル選択 */
 .lead { text-align: center; color: var(--parchment-dim); font-size: 0.95rem; margin: 0 0 24px; }
+@media (max-width: 480px) { .lead br { display: none; } }
 .genres { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
 @media (min-width: 560px) { .genres { grid-template-columns: repeat(3, 1fr); } }
 .genre-btn {
@@ -83,22 +84,19 @@ header.site .en { display: block; font-size: 0.68rem; letter-spacing: 0.35em; co
 
 .spread {
   display: grid;
-  grid-template-columns: repeat(3, var(--card-w)) var(--card-w);
+  grid-template-columns: repeat(3, var(--card-w)) 6px var(--card-w);
   grid-template-rows: repeat(5, var(--card-h));
   grid-template-areas:
-    ". p3 . ."
-    "p5 p1 p6 p10"
-    ". p4 . p9"
-    ". . . p8"
-    ". . . p7";
+    ". p3 . . ."
+    "p5 p1 p6 . p10"
+    ". p4 . . p9"
+    ". . . . p8"
+    ". . . . p7";
   gap: var(--gap);
-  column-gap: var(--gap);
   justify-content: center;
   margin: 8px auto 20px;
   position: relative;
 }
-.spread > .slot:nth-child(4) { margin-left: calc(var(--gap) * 1.2); } /* 10 */
-.spread > .slot:nth-child(7), .spread > .slot:nth-child(8), .spread > .slot:nth-child(9) { margin-left: calc(var(--gap) * 1.2); }
 .slot { position: relative; width: var(--card-w); height: var(--card-h); pointer-events: none; }
 .card:not([disabled]) { pointer-events: auto; }
 .slot[data-pos="1"] { grid-area: p1; } .slot[data-pos="2"] { grid-area: p1; z-index: 2; }
@@ -207,7 +205,7 @@ footer.site { text-align: center; font-size: 0.72rem; color: var(--brass-dim); m
 }
 @media (max-width: 400px) {
   .wrap { padding: 16px 16px 48px; }
-  :root { --gap: 8px; --card-w: clamp(60px, calc((100vw - 32px - 3 * var(--gap) - 4px) / 4), 96px); }
+  :root { --gap: 8px; --card-w: clamp(60px, calc((100vw - 32px - 4 * var(--gap) - 6px) / 4), 96px); }
   .entry { padding: 14px; }
 }
 </style>
@@ -427,10 +425,6 @@ const Reading = (() => {
     6: '調和と回復', 7: '試練と見直し', 8: '前進と力', 9: '到達の目前', 10: '完結と次の周期',
   };
   const RANK_LABEL = { 1: 'エース', 11: 'ペイジ', 12: 'ナイト', 13: 'クイーン', 14: 'キング' };
-  const POS = {
-    1: '現状', 2: '障害・課題', 3: '顕在意識・目標', 4: '潜在意識・土台', 5: '過去',
-    6: '近い未来', 7: '本人の姿勢', 8: '周囲の環境', 9: '願望と恐れ', 10: '最終結果',
-  };
 
   // カードの基調（正位置での重さ）。-1=重い / 0=中立 / 1=明るい
   const HEAVY = new Set(['major-13', 'major-15', 'major-16', 'major-18', 'wands-05', 'wands-10', 'cups-05', 'swords-03', 'swords-05', 'swords-07', 'swords-08', 'swords-09', 'swords-10', 'pentacles-05']);
@@ -672,7 +666,7 @@ const Reading = (() => {
     };
   }
 
-  return { build, POS };
+  return { build };
 })();
 </script>
 <script>
