@@ -9,7 +9,7 @@ for (const f of BASE_FILES) {
   const p = path.join(root, 'data', `${f}.json`);
   if (fs.existsSync(p)) for (const c of JSON.parse(fs.readFileSync(p, 'utf8'))) BASE[c.id] = c;
 }
-const FRAMES = ['inner', 'past', 'future'];
+const FRAMES = ['inner', 'past', 'future', 'obstacle', 'goal', 'attitude', 'environment', 'hopefear', 'outcome'];
 const LEN_MIN = 60, LEN_MAX = 120, LEN_HARD_MIN = 50, LEN_HARD_MAX = 140;
 const NG = ['必ず', '絶対', 'してしまいます', 'このカード', '今日', '今週', '来月', '来週'];
 const errors = [], warns = [];
@@ -55,7 +55,9 @@ for (const f of files) {
       if (!base.genres[genre]) { errors.push(`${where0}: 未知のジャンル ${genre}`); continue; }
       for (const o of ['up', 'rev']) {
         if (!g[o]) { errors.push(`${where0} ${genre}.${o}: がない`); continue; }
-        for (const fr of FRAMES) checkText(`${where0} ${genre}.${o}.${fr}`, g[o][fr], base.genres[genre][o]);
+        const present = FRAMES.filter((fr) => fr in g[o]);
+        if (!present.length) errors.push(`${where0} ${genre}.${o}: 枠が 1 つもない`);
+        for (const fr of present) checkText(`${where0} ${genre}.${o}.${fr}`, g[o][fr], base.genres[genre][o]);
         const extra = Object.keys(g[o]).filter((k) => !FRAMES.includes(k));
         if (extra.length) errors.push(`${where0} ${genre}.${o}: 余計なキー ${extra.join(',')}`);
       }
@@ -67,6 +69,10 @@ const STOCK = {
   inner: ['心の奥', '心のどこか'],
   past: ['名残', '手放', '持ち越', '遠ざか'],
   future: ['これから来', '近づいて', '入ってき', 'これから入'],
+  obstacle: ['立ちはだか', '壁', '足かせ'],
+  goal: ['理想', '目指して'],
+  attitude: ['構え', '姿勢'],
+  outcome: ['落ち着き', 'たどり着'],
 };
 for (const [fr, words] of Object.entries(STOCK)) {
   const texts = all.filter((t) => t.where.endsWith(`.${fr}`));

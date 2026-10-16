@@ -7,7 +7,7 @@
     { id: 'relation', name: '人間関係', en: 'RELATIONSHIPS', desc: '友人、家族、周囲との関わり' },
   ];
   // ポジションごとに使う時間枠。now=いま働いている影響 / inner=意識と心の奥 / past=過ぎ去りつつある影響 / future=これから・結末
-  const POS_FRAME = { 1: 'now', 2: 'now', 7: 'now', 8: 'now', 3: 'inner', 4: 'inner', 9: 'inner', 5: 'past', 6: 'future', 10: 'future' };
+  const POS_FRAME = { 1: 'now', 2: 'obstacle', 3: 'goal', 4: 'inner', 5: 'past', 6: 'future', 7: 'attitude', 8: 'environment', 9: 'hopefear', 10: 'outcome' };
   // カードの種類（大アルカナ／スート）の表示用
   const SUIT_INFO = {
     wands: { name: 'ワンド', element: '火', theme: '情熱・行動・意志' },
@@ -22,7 +22,7 @@
   const kindChip = (card) => (card.arcana === 'major'
     ? '<span class="chip kind major">大アルカナ</span>'
     : `<span class="chip kind ${card.suit}">小アルカナ<span class="sep">・</span>${SUIT_INFO[card.suit].name}（${SUIT_INFO[card.suit].element}）</span>`);
-  const FRAME_LABEL = { now: 'いま働いている影響として', inner: '心の内側の動きとして', past: '過ぎ去りつつある影響として', future: 'これから向かう流れとして' };
+  const FRAME_LABEL = { now: 'いま働いている影響として', obstacle: '立ちはだかっているものとして', goal: '意識して目指しているものとして', inner: '心の奥にあるものとして', past: '過ぎ去りつつある影響として', future: 'これから働き始める流れとして', attitude: '本人の構えとして', environment: '周りからの影響として', hopefear: '望みと恐れの両面として', outcome: 'たどり着く先として' };
   const POSITIONS = [
     { n: 1, name: '現状', desc: 'あなたや物事全体を包んでいる空気。いま働いている影響。' },
     { n: 2, name: '障害・課題', desc: '立ちはだかっているものの性質。良いカードなら障害は深刻ではないか、良いものが裏目に出ていると読む。' },

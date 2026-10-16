@@ -15,12 +15,16 @@ for (const f of ORDER) {
 console.log(`cards: ${cards.length}`);
 
 // 時間枠別の文（data/frames/*.json）を統合する。無い枠は現在枠の文で埋める
-const FRAMES = ['inner', 'past', 'future'];
+const FRAMES = ['inner', 'past', 'future', 'obstacle', 'goal', 'attitude', 'environment', 'hopefear', 'outcome'];
 const framesById = {};
 for (const f of fs.readdirSync(path.join(root, 'data', 'frames')).filter((x) => x.endsWith('.json')).sort()) {
   for (const c of JSON.parse(fs.readFileSync(path.join(root, 'data', 'frames', f), 'utf8'))) {
     framesById[c.id] = framesById[c.id] || {};
-    for (const [g, v] of Object.entries(c.frames)) framesById[c.id][g] = v;
+    for (const [g, v] of Object.entries(c.frames)) {
+      const cur = framesById[c.id][g] || { up: {}, rev: {} };
+      for (const o of ['up', 'rev']) Object.assign(cur[o], v[o] || {});
+      framesById[c.id][g] = cur;
+    }
   }
 }
 let filled = 0, missing = 0;

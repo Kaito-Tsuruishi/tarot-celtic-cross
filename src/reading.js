@@ -382,7 +382,7 @@ const Reading = (() => {
       pairs: pairSection(spread),
       final: {
         card: c10,
-        text: (c10.rev ? c10.card.genres[genre].rev : c10.card.genres[genre].up).future,
+        text: (c10.rev ? c10.card.genres[genre].rev : c10.card.genres[genre].up).outcome,
       },
     };
   }
