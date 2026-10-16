@@ -5,6 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="dark">
 <title>ケルト十字タロット</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#17130f">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;600&display=swap">
 <style>
 :root {
   --desk: #17130f;
@@ -21,7 +27,7 @@
   --card-w: clamp(62px, calc((100vw - 48px - 4 * var(--gap) - 6px) / 4), 96px);
   --card-h: calc(var(--card-w) * 5 / 3);
   --gap: 10px;
-  --serif: "Hiragino Mincho ProN", "Yu Mincho", "YuMincho", "Noto Serif JP", "Iowan Old Style", "Palatino", Georgia, serif;
+  --serif: "Noto Serif JP", "Hiragino Mincho ProN", "Yu Mincho", "YuMincho", "Iowan Old Style", "Palatino", Georgia, serif;
   --flip-ms: 620ms;
   --deal-ms: 560ms;
 }
@@ -154,22 +160,35 @@ header.site .en { display: block; font-size: 0.68rem; letter-spacing: 0.35em; co
 .slot[data-pos="2"] .pos-label { transform: rotate(-90deg); }
 .card.is-flipped + .pos-label { background: var(--brass); }
 
-/* カード面のスタイル（SVG） */
+/* カード面のスタイル（SVG）。--suit はスートごとの差し色（大アルカナは金） */
 .card-art .paper { fill: #ead9b4; }
 .card-art .grain { fill: #d9c79b; opacity: 0.6; }
-.card-art .rule { fill: none; stroke: var(--ink); stroke-width: 1.4; }
+.card-art .rule { fill: none; stroke: var(--suit); stroke-width: 1.3; }
 .card-art .rule.thin { stroke-width: 0.5; stroke: var(--ink-soft); }
+.card-art .corner-mark { stroke-width: 1; }
+.card-art .corner-mark .f { fill: var(--suit); }
 .card-art .ink { fill: none; stroke: var(--ink); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .card-art .ink .f { fill: var(--ink); stroke: none; }
+.card-art .ink .tint { fill: var(--suit); stroke: none; opacity: 0.85; }
+.card-art .ink .fine { stroke-width: 0.8; }
 .card-art .ink .z { stroke: var(--oxblood); }
 .card-art .ink .halo { stroke: var(--ink-soft); stroke-width: 0.6; stroke-dasharray: 2 3; }
 .card-art .ink .rays { stroke-width: 1.4; }
-.card-art .corner { font-family: var(--serif); font-size: 13px; fill: var(--ink); font-weight: 600; }
+.card-art .bg { fill: none; stroke: var(--suit); stroke-width: 0.5; opacity: 0.38; }
+.card-art .bg .f { fill: var(--suit); stroke: none; }
+.card-art .sub { fill: none; stroke: var(--suit); stroke-width: 1.1; stroke-linecap: round; stroke-linejoin: round; }
+.card-art .sub .f { fill: var(--suit); stroke: none; }
+.card-art .sub .fine { stroke-width: 0.6; }
+.card-art.is-major .ink.motif { stroke-width: 1.9; }
+.card-art .corner { font-family: var(--serif); font-size: 13px; fill: var(--suit); font-weight: 600; }
+.card-art .title-rule { stroke: var(--suit); stroke-width: 0.6; opacity: 0.7; }
 .card-art .title { font-family: var(--serif); font-size: 10.5px; fill: var(--ink); letter-spacing: 0.08em; }
-.card-art .title-en { font-family: Georgia, "Iowan Old Style", serif; font-size: 6px; fill: var(--ink-soft); letter-spacing: 0.22em; }
+.card-art .title-en { font-family: Georgia, "Iowan Old Style", serif; font-size: 6px; fill: var(--suit); letter-spacing: 0.22em; }
 .card-art .night { fill: var(--night); }
+.card-art .weave { stroke: var(--brass); stroke-width: 0.45; opacity: 0.22; }
 .card-art .brass { fill: none; stroke: var(--brass); stroke-width: 1.2; }
-.card-art .lattice path { fill: none; stroke: var(--brass); stroke-width: 0.5; opacity: 0.45; }
+.card-art .brass.thin { stroke-width: 0.5; opacity: 0.8; }
+.card-art .brass.dots circle { fill: var(--brass); stroke: none; }
 .card-art .medal { fill: var(--night-2); stroke: var(--brass); stroke-width: 0.6; }
 
 /* 進行表示 */

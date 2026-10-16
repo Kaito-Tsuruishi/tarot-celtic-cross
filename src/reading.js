@@ -20,6 +20,22 @@ const Reading = (() => {
   };
   const RANK_LABEL = { 1: 'エース', 11: 'ペイジ', 12: 'ナイト', 13: 'クイーン', 14: 'キング' };
 
+  // エレメンタル・ディグニティ（隣り合うカードの元素の相性）
+  const SUIT_ELEMENT = { wands: 'fire', cups: 'water', swords: 'air', pentacles: 'earth' };
+  // 大アルカナの元素（黄金の夜明け団系の占星術対応）
+  const MAJOR_ELEMENT = ['air', 'air', 'water', 'earth', 'fire', 'earth', 'air', 'water', 'fire', 'earth', 'fire', 'air', 'water', 'water', 'fire', 'earth', 'fire', 'air', 'water', 'fire', 'fire', 'earth'];
+  const ELEMENT_JA = { fire: '火', water: '水', air: '風', earth: '地' };
+  const element = (c) => (c.card.arcana === 'major' ? MAJOR_ELEMENT[c.card.rank] : SUIT_ELEMENT[c.card.suit]);
+  // 'same'=同じ元素で強め合う / 'friend'=相性がよい（火と風・水と地） / 'foe'=打ち消し合う（火と水・風と地） / 'neutral'
+  function dignity(a, b) {
+    const ea = element(a), eb = element(b);
+    if (ea === eb) return 'same';
+    const pair = [ea, eb].sort().join('-');
+    if (pair === 'air-fire' || pair === 'earth-water') return 'friend';
+    if (pair === 'fire-water' || pair === 'air-earth') return 'foe';
+    return 'neutral';
+  }
+
   // カードの基調（正位置での重さ）。-1=重い / 0=中立 / 1=明るい
   const HEAVY = new Set(['major-13', 'major-15', 'major-16', 'major-18', 'wands-05', 'wands-10', 'cups-05', 'swords-03', 'swords-05', 'swords-07', 'swords-08', 'swords-09', 'swords-10', 'pentacles-05']);
   const NEUTRAL = new Set(['major-02', 'major-09', 'major-12', 'wands-02', 'wands-07', 'wands-09', 'cups-04', 'cups-07', 'cups-08', 'swords-02', 'swords-04', 'swords-06', 'pentacles-04', 'pentacles-07']);
@@ -301,6 +317,42 @@ const Reading = (() => {
       `「${kw(c3)}」という目標と、「${kw(c10)}」という結末は、別の方向を指しています。ずれの原因は、土台の${name(c4)}にあることが多いので、根っこの「${kw(c4)}」を認めたうえで目標を調整すると、着地点が近づきます。`,
     ];
     out.push(pick(t310));
+
+    // 元素の相性: 中央の 1 枚目と、十字で接する 2・3・4・5・6 枚目
+    const neighbors = [c2, c3, c4, c5, c6];
+    const rel = neighbors.map((x) => dignity(c1, x));
+    const support = rel.filter((r) => r === 'same' || r === 'friend').length;
+    const clash = rel.filter((r) => r === 'foe').length;
+    const e1 = ELEMENT_JA[element(c1)];
+    if (support >= 3 && clash === 0) {
+      out.push(pick([
+        `元素で見ると、中央の${name(c1)}（${e1}）は、十字で接するカードの多くと相性がよく、周りから力を受け取っています。現状の勢いは本物で、そのまま押し進めて差し支えありません。`,
+        `現状のカードは${e1}の元素で、周りに置かれたカードと強め合う関係にあります。状況が一方向にまとまりやすい配置なので、迷いがあるなら流れに任せてみてください。`,
+        `十字の中心（${e1}）を囲む 5 枚のうち ${support} 枚が、中心と響き合う元素です。環境が現状を後押ししている形で、動くなら周りの力を借りやすい時期です。`,
+      ]));
+    } else if (clash >= 3) {
+      out.push(pick([
+        `元素で見ると、中央の${name(c1)}（${e1}）は、十字で接するカードの多くと打ち消し合う関係です。現状の力が周りに削がれやすく、思ったほど勢いが出ない配置なので、無理に押さず足場を固める方が得策です。`,
+        `現状のカードは${e1}の元素ですが、周囲には相反する元素が並んでいます。状況と環境が噛み合っておらず、空回りしやすい時期です。方向を変えるより、速度を落として様子を見てください。`,
+        `十字の中心（${e1}）を囲む 5 枚のうち ${clash} 枚が、中心と相性の悪い元素です。外からの抵抗が強い配置なので、いまは結果を急がず、味方になる要素を一つずつ増やしていく段階です。`,
+      ]));
+    } else {
+      const foe = rel[0] === 'foe' ? c2 : null;
+      if (foe) {
+        const e2 = ELEMENT_JA[element(c2)];
+        out.push(pick([
+          `元素で見ると、現状の${name(c1)}（${e1}）と課題の${name(c2)}（${e2}）は打ち消し合う関係です。課題が現状の勢いを直接そぐ形で働いているので、二つを同時に抱えず、課題の方を先に小さくすることが先決です。`,
+          `中央で交わる 2 枚は、${e1}と${e2}という相反する元素です。いま起きていることと、立ちはだかるものが根本的に性質が違うため、同じやり方で両方に対応するのは難しいでしょう。課題には課題専用の対処を考えてください。`,
+          `現状（${e1}）と課題（${e2}）の元素がぶつかっています。この組み合わせは、力が相殺されて「何をしても動かない」感覚を生みやすいものです。それは失敗ではなく配置の性質なので、焦らないでください。`,
+        ]));
+      } else if (rel[0] === 'same' || rel[0] === 'friend') {
+        const e2 = ELEMENT_JA[element(c2)];
+        out.push(pick([
+          `元素で見ると、現状の${name(c1)}（${e1}）と課題の${name(c2)}（${e2}）は相性がよく、課題といっても現状と同じ方向を向いています。障害は乗り越えるものというより、現状を加速させる負荷と読めます。`,
+          `中央で交わる 2 枚は${e1}と${e2}で、互いを強める関係です。課題の位置にあっても現状の力を削いではいないので、この課題は「正面から扱えば味方になる」種類のものです。`,
+        ]));
+      }
+    }
 
     // 10 枚目の特記
     if (c10.card.arcana === 'major') {
