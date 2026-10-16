@@ -4,7 +4,11 @@
 
 ## 使い方
 
-`dist/index.html` をブラウザで開く。サーバもビルドツールも不要。
+公開版: https://kaito-tsuruishi.github.io/tarot-celtic-cross/
+
+ローカルでは `dist/index.html` をブラウザで開くだけで動く。サーバもビルドツールも不要。
+
+main に push すると GitHub Actions（`.github/workflows/pages.yml`）がデータ検証 → ビルド → GitHub Pages へのデプロイを行う。
 
 ## 構成
 
