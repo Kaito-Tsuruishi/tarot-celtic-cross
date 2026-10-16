@@ -25,6 +25,8 @@
   const DEAL_STEP_MS = 130;
   const DEAL_MS = 560;
   const FLIP_MS = 620;
+  const SHEET_CLOSE_MS = 220;
+  const AFTER_FLIP_MS = 420;
   const $ = (id) => document.getElementById(id);
   const wait = (ms) => new Promise((r) => setTimeout(r, REDUCED.matches ? 0 : ms));
 
@@ -247,20 +249,48 @@
     const c = state.spread[pos - 1];
     const btn = document.querySelector(`.card[data-pos="${pos}"]`);
     state.busy = true;
-    btn.classList.add('is-flipped');
+    setStatus(`${pos} 枚目「${POSITIONS[pos - 1].name}」をめくっています…`, true);
+    await bringIntoView(btn);
+    btn.classList.add('is-flipped', 'is-flipping');
     btn.classList.remove('is-next');
     btn.disabled = true;
-    setStatus(`${pos} 枚目「${POSITIONS[pos - 1].name}」をめくっています…`, true);
     await wait(FLIP_MS);
+    btn.classList.remove('is-flipping');
     btn.classList.add('is-glow');
     setTimeout(() => btn.classList.remove('is-glow'), 1200);
     state.next = pos;
     appendEntry(c);
     markNext();
     updateStatus();
-    state.busy = false;
     if (state.next >= 10) buildSummary();
+    await wait(AFTER_FLIP_MS);
+    state.busy = false;
     openSheet(c, true);
+  }
+
+  // カードが画面外（または操作バーの裏）にあれば中央へスクロールし、完了を待つ
+  async function bringIntoView(el) {
+    const r = el.getBoundingClientRect();
+    const top = 56, bottom = window.innerHeight - 100;
+    if (r.top >= top && r.bottom <= bottom) return;
+    const target = window.scrollY + r.top + r.height / 2 - window.innerHeight / 2;
+    await scrollTo(Math.max(0, target));
+  }
+
+  // 一定時間で確実に終わるスクロール（タブが背面でも止まらないよう setTimeout で刻む）
+  function scrollTo(y, ms = 420) {
+    if (REDUCED.matches) { window.scrollTo(0, y); return Promise.resolve(); }
+    const from = window.scrollY;
+    const t0 = performance.now();
+    return new Promise((resolve) => {
+      const step = () => {
+        const t = Math.min(1, (performance.now() - t0) / ms);
+        const e = 1 - Math.pow(1 - t, 3);
+        window.scrollTo(0, from + (y - from) * e);
+        if (t < 1) setTimeout(step, 16); else resolve();
+      };
+      step();
+    });
   }
 
   function appendEntry(c) {
@@ -282,6 +312,17 @@
   }
 
   // --- 拡大シート ---
+  async function closeSheet() {
+    const dlg = $('card-sheet');
+    if (!dlg.open) return;
+    if (!REDUCED.matches) {
+      dlg.classList.add('is-closing');
+      await wait(SHEET_CLOSE_MS);
+      dlg.classList.remove('is-closing');
+    }
+    dlg.close();
+  }
+
   function openSheet(c, fromFlip) {
     const p = POSITIONS[c.pos - 1];
     const dlg = $('card-sheet');
@@ -302,15 +343,15 @@
       </details>`;
     const nextBtn = $('sheet-next');
     nextBtn.textContent = nextLabel;
-    nextBtn.onclick = () => {
-      dlg.close();
+    nextBtn.onclick = async () => {
+      await closeSheet();
       if (isLast) {
         goToSummary();
       } else if (c.pos === state.next) {
         flip(state.next + 1);
       }
     };
-    $('sheet-close').onclick = () => dlg.close();
+    $('sheet-close').onclick = () => closeSheet();
     dlg.classList.toggle('from-flip', !!fromFlip);
     if (!dlg.open) dlg.showModal();
     $('sheet-scroll').scrollTop = 0;
@@ -371,5 +412,5 @@
   $('btn-change').addEventListener('click', backToGenres);
   $('btn-change-2').addEventListener('click', backToGenres);
   // シートの外側（背景）をタップで閉じる
-  $('card-sheet').addEventListener('click', (e) => { if (e.target === e.currentTarget) e.currentTarget.close(); });
+  $('card-sheet').addEventListener('click', (e) => { if (e.target === e.currentTarget) closeSheet(); });
 })();
