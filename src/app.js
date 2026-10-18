@@ -6,6 +6,11 @@
     { id: 'work', name: '仕事', en: 'WORK', desc: '職場、キャリア、取り組んでいること' },
     { id: 'relation', name: '人間関係', en: 'RELATIONSHIPS', desc: '友人、家族、周囲との関わり' },
   ];
+  // 恋愛ジャンルで最初に選んでもらう状況
+  const LOVE_STATUS = [
+    { id: 'single', name: '片思い・これから', desc: '気になる人がいる、出会いを待っている、まだ付き合っていない' },
+    { id: 'couple', name: '交際中・パートナーあり', desc: '付き合っている、結婚している、一緒に暮らしている' },
+  ];
   // ポジションごとに使う時間枠。now=いま働いている影響 / inner=意識と心の奥 / past=過ぎ去りつつある影響 / future=これから・結末
   const POS_FRAME = { 1: 'now', 2: 'obstacle', 3: 'goal', 4: 'inner', 5: 'past', 6: 'future', 7: 'attitude', 8: 'environment', 9: 'hopefear', 10: 'outcome' };
   // カードの種類（大アルカナ／スート）の表示用
@@ -45,18 +50,19 @@
   const $ = (id) => document.getElementById(id);
   const wait = (ms) => new Promise((r) => setTimeout(r, REDUCED.matches ? 0 : ms));
 
-  const state = { genre: null, spread: [], next: 0, busy: false, seed: 0 };
+  const state = { genre: null, loveStatus: null, spread: [], next: 0, busy: false, seed: 0 };
   function setBusy(v) {
     state.busy = v;
     document.body.classList.toggle('is-busy', v);
   }
-  const STORAGE_KEY = 'celtic-cross:v2';
+  const STORAGE_KEY = 'celtic-cross:v3';
 
   function saveState() {
     try {
       if (!state.genre) { sessionStorage.removeItem(STORAGE_KEY); return; }
       sessionStorage.setItem(STORAGE_KEY, JSON.stringify({
         genre: state.genre,
+        loveStatus: state.loveStatus,
         next: state.next,
         seed: state.seed,
         done: document.body.classList.contains('is-done'),
@@ -72,7 +78,9 @@
       if (!GENRES.some((g) => g.id === d.genre) || !Array.isArray(d.cards) || d.cards.length !== 10) return null;
       const spread = d.cards.map(([id, rev], i) => ({ pos: i + 1, card: CARDS.find((c) => c.id === id), rev: rev === 1 }));
       if (spread.some((c) => !c.card)) return null;
-      return { genre: d.genre, next: Math.min(10, Math.max(0, d.next | 0)), spread, seed: d.seed >>> 0, done: !!d.done };
+      const loveStatus = LOVE_STATUS.some((x) => x.id === d.loveStatus) ? d.loveStatus : null;
+      if (d.genre === 'love' && !loveStatus) return null;
+      return { genre: d.genre, loveStatus, next: Math.min(10, Math.max(0, d.next | 0)), spread, seed: d.seed >>> 0, done: !!d.done };
     } catch (e) { return null; }
   }
 
@@ -96,9 +104,11 @@
     return shuffle(CARDS).slice(0, 10).map((card, i) => ({ pos: i + 1, card, rev: randInt(2) === 1 }));
   }
   const orientLabel = (c) => (c.rev ? '逆位置' : '正位置');
+  // 恋愛の文は、状況によって変わるものだけ { single, couple } になっている
+  const byStatus = (v) => (v && typeof v === 'object' ? v[state.loveStatus] || v.single : v);
   const genreText = (c) => {
     const t = c.rev ? c.card.genres[state.genre].rev : c.card.genres[state.genre].up;
-    return t[POS_FRAME[c.pos]] || t.now;
+    return byStatus(t[POS_FRAME[c.pos]] || t.now);
   };
   const keywordsOf = (c) => (c.rev ? c.card.keywords.rev : c.card.keywords.up);
   function cardLineHtml(c, tag = 'h3') {
@@ -124,17 +134,48 @@
       b.className = 'genre-btn';
       b.dataset.genre = g.id;
       b.innerHTML = `<span class="name">${g.name}</span><span class="en">${g.en}</span><span class="desc">${g.desc}</span>`;
-      b.addEventListener('click', () => start(g.id));
+      b.addEventListener('click', () => (g.id === 'love' ? showLoveStatus() : start(g.id)));
       li.appendChild(b);
       ul.appendChild(li);
     });
     $('positions-list').innerHTML = POSITIONS.map((p) => `<li><b>${p.name}</b>：${p.desc}</li>`).join('');
   }
 
+  // --- 恋愛の状況を選ぶ ---
+  function renderLoveStatus() {
+    const ul = $('love-status-list');
+    ul.innerHTML = '';
+    LOVE_STATUS.forEach((x, i) => {
+      const li = document.createElement('li');
+      li.style.setProperty('--i', i);
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'genre-btn';
+      b.dataset.status = x.id;
+      b.innerHTML = `<span class="name">${x.name}</span><span class="desc">${x.desc}</span>`;
+      b.addEventListener('click', () => start('love', x.id));
+      li.appendChild(b);
+      ul.appendChild(li);
+    });
+  }
+  function showLoveStatus() {
+    $('screen-genre').hidden = true;
+    $('screen-love-status').hidden = false;
+    window.scrollTo({ top: 0, behavior: 'auto' });
+    document.querySelector('#love-status-list .genre-btn').focus({ preventScroll: true });
+  }
+  function hideLoveStatus() {
+    $('screen-love-status').hidden = true;
+    $('screen-genre').hidden = false;
+    const b = document.querySelector('.genre-btn[data-genre="love"]');
+    if (b) b.focus({ preventScroll: true });
+  }
+
   // --- 開始・配置 ---
-  async function start(genreId) {
+  async function start(genreId, loveStatus) {
     if (state.busy) return;
     state.genre = genreId;
+    state.loveStatus = genreId === 'love' ? (loveStatus || state.loveStatus || 'single') : null;
     state.spread = draw();
     state.next = 0;
     state.seed = randInt(0x7fffffff);
@@ -157,6 +198,7 @@
   // リロード後に途中の状態へ戻す（演出なし）
   function resume(saved) {
     state.genre = saved.genre;
+    state.loveStatus = saved.loveStatus;
     state.spread = saved.spread;
     state.next = saved.next;
     state.seed = saved.seed;
@@ -181,8 +223,10 @@
 
   function enterSpread() {
     const g = GENRES.find((x) => x.id === state.genre);
-    $('genre-chip').textContent = `${g.name}の占い`;
+    const ls = LOVE_STATUS.find((x) => x.id === state.loveStatus);
+    $('genre-chip').textContent = ls ? `${g.name}（${ls.name}）` : `${g.name}の占い`;
     $('screen-genre').hidden = true;
+    $('screen-love-status').hidden = true;
     $('screen-spread').hidden = false;
     document.body.classList.add('in-spread');
     document.body.classList.remove('is-done');
@@ -548,7 +592,7 @@
   }
 
   function buildSummary() {
-    const r = Reading.build(state.spread, state.genre, state.seed);
+    const r = Reading.build(state.spread, state.genre, state.seed, state.loveStatus);
     const c = r.final.card;
     $('summary-strip').innerHTML = state.spread.map((x) => `
       <button type="button" class="strip-item" data-pos="${x.pos}" aria-label="${x.pos} 枚目 ${POSITIONS[x.pos - 1].name}：${x.card.nameJa}、${orientLabel(x)}">
@@ -581,6 +625,7 @@
     $('screen-genre').hidden = false;
     document.body.classList.remove('in-spread', 'is-done');
     state.genre = null;
+    state.loveStatus = null;
     saveState();
     window.scrollTo({ top: 0, behavior: 'auto' });
     const first = document.querySelector('.genre-btn');
@@ -589,6 +634,8 @@
 
   // --- 初期化 ---
   renderGenres();
+  renderLoveStatus();
+  $('btn-love-back').addEventListener('click', hideLoveStatus);
   setupSheetDrag();
   const saved = loadState();
   if (saved) resume(saved);

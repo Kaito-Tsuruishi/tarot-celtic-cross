@@ -74,6 +74,11 @@ header.site .en { display: block; font-size: 0.68rem; letter-spacing: 0.35em; co
 @media (max-width: 480px) { .lead br { display: none; } }
 .genres { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, 1fr); grid-auto-rows: 1fr; gap: 12px; }
 .genres li { animation: rise 420ms ease-out both; animation-delay: calc(var(--i) * 60ms); }
+.step-heading { text-align: center; font-size: 1.25rem; font-weight: 500; letter-spacing: 0.2em; margin: 0 0 8px; }
+.genres.love-status { grid-template-columns: 1fr; }
+.genres.love-status .genre-btn { min-height: 84px; }
+.genres.love-status .genre-btn .desc { margin-top: 4px; }
+.step-back { text-align: center; margin: 20px 0 0; }
 
 .genre-btn {
   width: 100%; height: 100%; min-height: 96px; padding: 14px 12px; text-align: left; cursor: pointer;
@@ -379,6 +384,13 @@ footer.site { text-align: center; font-size: 0.72rem; color: var(--brass-dim); m
       <h2 id="genre-heading" class="visually-hidden">ジャンルを選ぶ</h2>
       <p class="lead">占いたいテーマを選んでください。<br>78 枚から 10 枚を引き、ケルト十字に並べます。<br>解釈は、カードが置かれた位置（現在・内面・過去・未来）に合わせて変わります。</p>
       <ul class="genres" id="genre-list"></ul>
+    </section>
+
+    <section id="screen-love-status" hidden aria-labelledby="love-status-heading">
+      <h2 id="love-status-heading" class="step-heading">いまの状況は？</h2>
+      <p class="lead">恋愛の占いは、状況に合わせて解釈が変わります。近い方を選んでください。</p>
+      <ul class="genres love-status" id="love-status-list"></ul>
+      <p class="step-back"><button type="button" class="btn" id="btn-love-back">テーマを選び直す</button></p>
     </section>
 
     <section id="screen-spread" hidden aria-labelledby="spread-heading">

@@ -6,7 +6,7 @@
 
 ## 遊び方
 
-1. テーマ（総合・恋愛・仕事・人間関係）を選ぶ
+1. テーマ（総合・恋愛・仕事・人間関係）を選ぶ。恋愛を選んだときは、続けて「片思い・これから」「交際中・パートナーあり」のどちらかを選ぶ
 2. 山札が切られ、10 枚がケルト十字の形に配られる
 3. 光っているカードをタップするか、画面下のボタンで 1 枚ずつめくる。めくるとシートが開き、ポジション名・カード・正逆・解釈文を表示する
 4. 10 枚めくると総合リーディングが表示される
@@ -18,6 +18,7 @@
 ```
 data/          解釈データ（JSON）
   *.json         78 枚 × キーワード・基本の意味・4 ジャンル × 正逆の「現在」枠の文（624 文）
+  love-status/   恋愛の文のうち、交際前か交際中かで読み方が変わるものの反対側の版
   frames/        ポジション別の文（障害・目標・内面・過去・未来・姿勢・環境・願望と恐れ・結末。5,616 文）
 src/           アプリ本体
   index.html     画面と CSS
@@ -27,12 +28,14 @@ src/           アプリ本体
 scripts/
   validate.js        data/*.json の検証（文字数・禁止語・重複・欠け）
   validate-frames.js data/frames/*.json の検証（現在枠との重複・決まり文句の偏り）
+  validate-love-status.js data/love-status/*.json の検証（状況にそぐわない語・元の文との重複）
   build.js           データと src/ を 1 つの HTML に結合して dist/index.html を生成
 dist/index.html  ビルド成果物（これだけで動く）
 docs/
   handover.md        受領時の引き継ぎ資料
   writing-guide.md   解釈文の執筆ガイド
-  frames-guide.md    時間枠別の文の執筆ガイド
+  frames-guide.md    ポジション別の文の執筆ガイド
+  love-status-guide.md 恋愛の状況別の文の執筆ガイド
   research-notes.md  総合リーディングの読み筋の裏取り
 .github/workflows/pages.yml  main への push で検証 → ビルド → GitHub Pages へデプロイ
 ```
@@ -42,6 +45,7 @@ docs/
 ```bash
 node scripts/validate.js data/*.json
 node scripts/validate-frames.js data/frames/*.json
+node scripts/validate-love-status.js data/love-status/*.json
 node scripts/build.js
 ```
 
@@ -72,7 +76,8 @@ node scripts/build.js
 - 1 枚のカードに「キーワード（正逆）」「基本の意味（正逆）」「4 ジャンル × 正逆 × 10 ポジション」の文がある。合計 6,240 文
 - 解釈文は置かれたポジションごとに専用（現状／障害／目標／潜在意識／過去／近い未来／本人の姿勢／周囲の環境／願望と恐れ／最終結果）。1 枚目「現状」の文が土台で、ほかの 9 つはそれを各ポジションの視点に移し替えて書いている
 - 文はすべてオリジナル。60〜120 字・2 文（状態＋助言）・です・ます調。不安をあおる断定をしない。重いカード（死神・塔・ソードの 10 など）は「区切り」「急な変化」として書く
-- 書き方の詳細は `docs/writing-guide.md` と `docs/frames-guide.md`
+- 恋愛ジャンルは、交際前（片思い・これから）と交際中（パートナーあり）を最初に選んでもらう。恋愛の文の大半はどちらでも読める中立の文で、交際前か交際中のどちらかを前提にした文にだけ、反対側の版を用意して状況に応じて差し替える
+- 書き方の詳細は `docs/writing-guide.md`、`docs/frames-guide.md`、`docs/love-status-guide.md`
 
 ### 総合リーディング
 

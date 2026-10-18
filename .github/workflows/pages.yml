@@ -27,6 +27,10 @@ jobs:
           node-version: 22
       - name: Validate card data
         run: node scripts/validate.js data/*.json
+      - name: Validate position texts
+        run: node scripts/validate-frames.js data/frames/*.json
+      - name: Validate love status texts
+        run: node scripts/validate-love-status.js data/love-status/*.json
       - name: Build single HTML
         run: node scripts/build.js
       - uses: actions/configure-pages@v5

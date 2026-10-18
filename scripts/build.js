@@ -43,6 +43,26 @@ for (const c of cards) {
 }
 console.log(`frames: filled ${filled} / missing ${missing}`);
 
+// 恋愛の状況別の文（data/love-status/*.json）を適用する。対象の文は { single, couple } になる
+const byId = Object.fromEntries(cards.map((c) => [c.id, c]));
+const lsDir = path.join(root, 'data', 'love-status');
+let lsCount = 0;
+if (fs.existsSync(lsDir)) {
+  for (const f of fs.readdirSync(lsDir).filter((x) => x.endsWith('.json')).sort()) {
+    for (const e of JSON.parse(fs.readFileSync(path.join(lsDir, f), 'utf8'))) {
+      const [id, o, k] = e.key.split('|');
+      const slot = byId[id].genres.love[o];
+      const original = slot[k];
+      if (typeof original !== 'string') throw new Error(`love-status: ${e.key} の元の文がない`);
+      if (e.side === 'single') slot[k] = { single: original, couple: e.alt };
+      else if (e.side === 'couple') slot[k] = { single: e.alt, couple: original };
+      else slot[k] = { single: e.single, couple: e.couple };
+      lsCount++;
+    }
+  }
+}
+console.log(`love-status: ${lsCount}`);
+
 const dataJs = `const CARDS = ${JSON.stringify(cards)};`;
 const html = read('src/index.html')
   .replace('<!--DATA-->', `<script>${dataJs.replace(/<\//g, '<\\/')}</script>`)

@@ -373,7 +373,10 @@ const Reading = (() => {
     return out;
   }
 
-  function build(spread, genre, seed) {
+  // 恋愛の文は状況によって { single, couple } になっているものがある
+  const pickStatus = (v, status) => (v && typeof v === 'object' ? v[status] || v.single : v);
+
+  function build(spread, genre, seed, loveStatus) {
     rng = Number.isInteger(seed) ? mulberry32(seed) : null;
     spread.genre = genre;
     const c10 = spread.find((x) => x.pos === 10);
@@ -382,7 +385,7 @@ const Reading = (() => {
       pairs: pairSection(spread),
       final: {
         card: c10,
-        text: (c10.rev ? c10.card.genres[genre].rev : c10.card.genres[genre].up).outcome,
+        text: pickStatus((c10.rev ? c10.card.genres[genre].rev : c10.card.genres[genre].up).outcome, loveStatus),
       },
     };
   }
