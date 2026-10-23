@@ -537,11 +537,21 @@
     dlg.addEventListener('touchcancel', end);
   }
 
+  // 総合リーディングが画面内に見えているか
+  function summaryInView() {
+    const el = $('summary');
+    if (el.hidden) return false;
+    const r = el.getBoundingClientRect();
+    return r.top < window.innerHeight && r.bottom > 0;
+  }
+
   function openSheet(c) {
     if (state.busy) return;
     const p = POSITIONS[c.pos - 1];
     const dlg = $('card-sheet');
     const isLast = state.next >= 10;
+    // 総合リーディングを読んでいる途中で開いたときは、閉じるだけでその位置に戻る
+    const fromSummary = isLast && document.body.classList.contains('is-done') && summaryInView();
     const nextLabel = isLast ? '総合リーディングを見る' : (c.pos === state.next ? '次のカードをめくる' : 'スプレッドに戻る');
     $('sheet-pos').innerHTML = `
       <span class="pos-n">${c.pos} 枚目 <span class="sep">/</span> 10</span>
@@ -561,7 +571,11 @@
         <p class="sheet-basic"><span>読み方</span>${FRAME_LABEL[POS_FRAME[c.pos]]}読んでいます。</p>
       </details>`;
     const nextBtn = $('sheet-next');
+    const closeBtn = $('sheet-close');
     nextBtn.textContent = nextLabel;
+    nextBtn.hidden = fromSummary;
+    closeBtn.classList.toggle('primary', fromSummary);
+    dlg.classList.toggle('single-action', fromSummary);
     nextBtn.onclick = async () => {
       await closeSheet();
       if (isLast) {
@@ -570,10 +584,10 @@
         flip(state.next + 1);
       }
     };
-    $('sheet-close').onclick = () => closeSheet();
+    closeBtn.onclick = () => closeSheet();
     if (!dlg.open) { lockScroll(); dlg.showModal(); }
     $('sheet-scroll').scrollTop = 0;
-    nextBtn.focus({ preventScroll: true });
+    (fromSummary ? closeBtn : nextBtn).focus({ preventScroll: true });
   }
 
   async function goToSummary() {
