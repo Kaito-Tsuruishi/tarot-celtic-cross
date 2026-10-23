@@ -31,6 +31,7 @@ scripts/
   validate-love-status.js data/love-status/*.json の検証（状況にそぐわない語・元の文との重複）
   build.js           データと src/ を 1 つの HTML に結合して dist/index.html を生成
 dist/index.html  ビルド成果物（これだけで動く）
+tests/selftest.js ブラウザ内で動く回帰テスト（scripts/serve-test.js で配信したときだけ差し込まれる）
 docs/
   handover.md        受領時の引き継ぎ資料
   writing-guide.md   解釈文の執筆ガイド
@@ -48,6 +49,17 @@ node scripts/validate-frames.js data/frames/*.json
 node scripts/validate-love-status.js data/love-status/*.json
 node scripts/build.js
 ```
+
+### 回帰テスト
+
+```bash
+node scripts/build.js
+node scripts/serve-test.js        # http://localhost:8766/?selftest
+```
+
+`?selftest` を付けて開くと、ページに `tests/selftest.js` が差し込まれ、実際のブラウザの中でアプリを自動操作して検査する。iOS シミュレータの Safari で開けば、実機と同じ WebKit で確かめられる（`xcrun simctl openurl booted http://localhost:8766/?selftest`）。終わると画面下に合否が出て、結果は `tests/report-<画面サイズ>-<時刻>.json` に保存される。
+
+検査する内容: 全ジャンルと恋愛の 2 状況で 10 枚をめくる流れ、各ポジション専用の解釈文が出ること、シートが画面内に収まり開いても拡大しないこと、背景の固定と解除、総合リーディングの表示と並びから開くシート、もう一度占う、再読み込みからの復元、どの画面でも横にはみ出さないこと。スワイプで閉じる操作など、指の動きが要るものは対象外なので手で確認する。
 
 `dist/index.html` をブラウザで開けば動く。サーバもビルドツールも不要。データや `src/` を直したら `build.js` を実行するか、main に push して GitHub Actions に任せる。
 
