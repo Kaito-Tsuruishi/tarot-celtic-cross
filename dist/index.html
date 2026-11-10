@@ -934,14 +934,6 @@ const ArtMajor = (() => {
   const feather = (b, x, y, rot, sc = 1) => at(x, y, `${b.tinted(FEATHER, 'lite', 'ink fine', 2)}<path class="ink hair" d="M1,0.4 C6,-6.6 12,-11.6 19,-15.4 M7,-5 L5.6,-9 M11,-8.4 L10,-12.2 M9.4,-4 L13.6,-4.6 M13.4,-7.6 L17,-8.6"/>`, rot, sc);
   const LEMNISCATE = 'M0,0 C-6,-8 -16,-8 -16,0 C-16,8 -6,8 0,0 C6,-8 16,-8 16,0 C16,8 6,8 0,0 Z';
   const BIRD = 'M0,0 C-3,-5 -8,-6 -10,-3 C-6,-3 -3,-1 0,3 C3,-1 6,-3 10,-3 C8,-6 3,-5 0,0 Z';
-  // 四大元素の記号（火・水・風・地）
-  const element = (kind, x, y, s) => {
-    const up = kind === 'fire' || kind === 'air', h = s * 0.87, tip = up ? y - h / 2 : y + h / 2, base = up ? y + h / 2 : y - h / 2;
-    const bar = kind === 'air' || kind === 'earth' ? ` M${f(x - s * 0.36)},${f(y + (up ? -0.04 : 0.04) * s)} H${f(x + s * 0.36)}` : '';
-    const tri = `M${f(x)},${f(tip)} L${f(x + s / 2)},${f(base)} L${f(x - s / 2)},${f(base)} Z`;
-    return `${el(tri, 'c1 wash')}${el(tri + bar, 'ink fine')}`;
-  };
-
   // ───────── 0〜10 ─────────
   // 0 愚者: 棒の先に荷物の包みを下げて肩に担ぎ、花を手に崖の縁へ踏み出す旅人。風に乗る羽根、遠くの山と太陽
   function fool(b) {
@@ -1084,21 +1076,27 @@ const ArtMajor = (() => {
       ${A.head}${B.head}<path class="body fine" d="M68.6,104 C68,98.6 78,98.6 77.4,104 C76,101.6 70,101.6 68.6,104 Z"/>`;
   }
 
-  // 7 戦車: 星空の下、天蓋のある車に立って手綱を取る人。大きな車輪、道の脇を流れる川
+  // 7 戦車: 星の天蓋を掲げた車に立ち、黒と白の二頭の馬の手綱を取る人
   function chariot(b) {
-    const car = 'M24,97 H66 C73,99 76,106 73,114 H24 Z', canopy = 'M19,74 Q47,58 77,74 L77,79 Q47,65 19,79 Z';
-    const moon = 'M4,-7.4 A8,8 0 1 0 4,7.4 A6,6 0 1 1 4,-7.4 Z';
-    const spokes = Array.from({ length: 8 }, (_, i) => { const a = (i * Math.PI) / 4 + 0.2; return [46 + Math.cos(a) * 3.6, 123 + Math.sin(a) * 3.6, 46 + Math.cos(a) * 14, 123 + Math.sin(a) * 14]; });
-    const P = person(b, 45, 112, 36, { robe: 'c1', hem: 0.18 });
-    return `${stars([[20, 42], [36, 50], [54, 40], [72, 50], [100, 40], [102, 70], [88, 84]])}${at(90, 56, `<circle class="ko" cx="0" cy="0" r="9.6"/>${C1(moon)}${el(moon, 'ink fine')}`)}
-      ${rod(72, 110, 107, 103, 3)}<path class="ink hair" d="M64,92.4 C80,94 94,92 107,87 M64,93.6 C80,98 94,97 107,93"/>
-      ${b.lines([[29, 97, 29, 77], [63, 97, 63, 76]], 'ink')}
-      ${P.robe}<path class="ink fine" d="M40.4,90 H49.6"/>${limb(b, [[50, 86.6], [57, 90.6], [63.6, 92.6]])}${P.head}${C2('M41,78.6 Q45,71 49,78.6 Z')}<path class="ink fine" d="M41,78.6 Q45,71 49,78.6 Z"/>
-      ${b.tinted(canopy, 'c1', 'ink', 2)}${el([24, 31, 38, 45, 52, 59, 66, 72].map((x) => `M${x},${f(79 - (1 - ((x - 48) / 29) ** 2) * 7)} v3.4`).join(' '), 'ink fine')}
-      ${b.tinted(car, 'c2', 'ink', 2)}<path class="rod-in" style="stroke-width:1.2" d="M28,101 H64 C68,102.4 70,106 69,110"/>${C1(star4D(47, 106, 3.8))}
-      <circle class="ko" cx="46" cy="123" r="18.6"/>${b.circle(46, 123, 17, 'body bold')}${b.circle(46, 123, 14, 'ink fine')}${b.lines(spokes, 'ink fine', 0.15)}${b.tinted(b.circleD(46, 123, 3.6, 0.2), 'c1', 'ink')}
-      ${b.line(13, 140.4, 107, 140.4)}${b.dashes([[14, 128, 9], [17, 134, 11], [15, 121, 6], [68, 136, 8], [84, 135, 10]])}
-      ${b.waves([[147, 0], [152, 4], [156.6, 0]], 'c2-ln heavy')}`;
+    const drape = 'M29,36 H91 V47 Q84.8,53.4 78.6,47 Q72.4,53.4 66.2,47 Q60,53.4 53.8,47 Q47.6,53.4 41.4,47 Q35.2,53.4 29,47 Z';
+    const car = 'M35,96 H85 V121 Q60,129.6 35,121 Z', wing = 'M55.6,108 C50,102.6 44,103.6 39.6,108 C45,108 50,110.8 55.6,110 Z';
+    const horse = b.curveD([[-9, 0], [-6.4, -7], [-5, -13], [-11, -9.4], [-15, -12], [-12.4, -18.6], [-4, -27], [0.6, -29], [3.6, -34.6], [6, -28], [9.6, -20], [11.4, -10], [10.4, 0]], true, 0.2);
+    const steed = (x, dir, dark) => at(x, 152, `<path class="ko" style="stroke-width:2.4" d="${horse}"/>${el(horse, dark ? 'blk' : 'body')}
+      <circle class="${dark ? 'lite' : 'blk'}" cx="-4.6" cy="-21" r="1.1"/>
+      <path class="${dark ? 'rod-in' : 'ink hair'}" style="stroke-width:0.7" d="M3,-29 C6,-24 8,-17 8.6,-9 M5.6,-26 L9,-27 M7.4,-20 L10.8,-20.6 M8.4,-13 L11.6,-13 M-13.6,-15 L-8,-12 M-8,-12 L-5.6,-16"/>`, 0, dir * 1.15, 1.15);
+    const tyre = (x) => `${b.ellipse(x, 112, 4.6, 15, 'body bold')}${b.lines([[x, 98, x, 126], [x - 4, 105, x + 4, 119], [x - 4, 119, x + 4, 105]], 'ink fine', 0.1)}`;
+    const P = person(b, 60, 104, 50, { robe: 'c1', hem: 0.2 });
+    return `${stars([[20, 58], [101, 62], [17, 86], [103, 88], [22, 40], [98, 40]])}
+      ${tyre(29)}${tyre(91)}${rod(31, 48, 36, 97, 2.4)}${rod(89, 48, 84, 97, 2.4)}
+      ${b.tinted(drape, 'c2', 'ink', 2)}${el([[41, 41.6], [53.6, 41], [66.4, 41], [79, 41.6]].map(([x, y]) => star4D(x, y, 2.6)).join(' '), 'lite')}
+      ${P.robe}<path class="body fine" d="M57.4,72 h5.2 v5.2 h-5.2 Z"/><path class="ink fine" d="M54.4,86 H65.6"/>
+      ${b.tinted(car, 'c2', 'ink', 2)}<path class="rod-in" style="stroke-width:1.2" d="M38,99.6 H82"/>
+      ${el(wing, 'body fine')}<g transform="translate(120 0) scale(-1 1)">${el(wing, 'body fine')}</g>${b.tinted(b.circleD(60, 108, 4.2, 0.2), 'c1', 'ink', 1.4)}
+      ${limb(b, [[53.6, 68], [48, 80], [50, 92]], 's2')}${limb(b, [[66.4, 68], [72, 80], [70, 92]], 's2')}
+      ${P.head}${b.tinted('M54.8,57.4 Q60,50 65.2,57.4 Z', 'c2', 'ink fine')}
+      <path class="ink fine" d="M50,92 C42,104 34,118 30,134 M70,92 C78,104 86,118 90,134"/>
+      ${steed(40, 1, true)}${steed(80, -1, false)}
+      ${b.line(13, 152, 107, 152)}${b.dashes([[16, 155.6, 10], [54, 155.6, 12], [94, 155.6, 10]])}`;
   }
 
   // 8 力: 目を閉じた獅子の顔と、その首に掛けた花綱。頭上に無限の輪
@@ -1135,21 +1133,26 @@ const ArtMajor = (() => {
       ${b.tinted(hood, 'c2', 'ink', 2)}${b.circle(56.4, 72.4, 5.6, 'body fine')}<path class="body fine" d="M51.6,75.4 C53.6,79.6 59.2,79.6 61.2,75.4 L56.4,90 Z"/>`;
   }
 
-  // 10 運命の輪: 八本の輻を持つ輪。上に戴く冠と下に落ちた冠、四隅に四大元素の記号
+  // 10 運命の輪: 台に据えた輪と、昇る者・頂に座る者・落ちる者。空に太陽と月、地面に落ちた冠
   function wheel(b) {
-    const spokes = Array.from({ length: 8 }, (_, i) => { const a = (i * Math.PI) / 4; return [60 + Math.cos(a) * 10, 94 + Math.sin(a) * 10, 60 + Math.cos(a) * 25.4, 94 + Math.sin(a) * 25.4]; });
-    const studs = Array.from({ length: 8 }, (_, i) => { const a = (i * Math.PI) / 4 + Math.PI / 8; return dot(60 + Math.cos(a) * 28.4, 94 + Math.sin(a) * 28.4, 1.5); }).join(' ');
-    const arrow = (a0, a1) => {
-      const P = (deg, r = 36.4) => [60 + Math.cos((deg * Math.PI) / 180) * r, 94 + Math.sin((deg * Math.PI) / 180) * r];
-      const pts = Array.from({ length: 7 }, (_, i) => P(a0 + ((a1 - a0) * i) / 6)), [hx, hy] = P(a1), [bx, by] = P(a1 - 7, 39.4), [cx, cy] = P(a1 - 7, 33.4);
-      return `${el(spline(pts), 'ink fine')}${el(`M${f(hx)},${f(hy)} L${f(bx)},${f(by)} L${f(cx)},${f(cy)} Z`, 'blk')}`;
+    const ring = (r) => Array.from({ length: 8 }, (_, i) => (i * Math.PI) / 4 + Math.PI / 8).map((a) => [60 + Math.cos(a) * r, 100 + Math.sin(a) * r]);
+    const spokes = Array.from({ length: 8 }, (_, i) => { const a = (i * Math.PI) / 4; return [60 + Math.cos(a) * 7, 100 + Math.sin(a) * 7, 60 + Math.cos(a) * 21.6, 100 + Math.sin(a) * 21.6]; });
+    const joints = ring(22).map(([x, y], i) => { const [x2, y2] = ring(27)[i]; return [x, y, x2, y2]; });
+    const moon = 'M2.6,-5 A5.4,5.4 0 1 0 2.6,5 A4,4 0 1 1 2.6,-5 Z';
+    // 輪にしがみつく小さな人。足元が (x, y)、rot で傾ける。legs を渡すと短い衣に脚を付ける
+    const rider = (x, y, rot, robe, sleeve, arms, legs = [], extra = '') => {
+      const P = person(b, 0, 0, 44, { robe, hem: legs.length ? 0.2 : 0.22, skirt: legs.length ? 0.64 : 1 });
+      return at(x, y, `${legs.map((pts) => limb(b, pts, 'dark', '')).join('')}${P.robe}${arms.map((pts) => limb(b, pts, sleeve)).join('')}${P.head}${extra}`, rot, 0.62);
     };
-    return `${element('fire', 22, 43, 11)}${element('water', 98, 43, 11)}${element('air', 22, 147, 11)}${element('earth', 98, 147, 11)}
-      ${arrow(-148, -112)}${arrow(32, 68)}
-      ${b.circle(60, 94, 31, 'body bold')}${b.circle(60, 94, 25.6, 'ink fine')}${C2(studs)}
-      ${b.lines(spokes.filter((_, i) => i % 2 === 0), 'ink', 0.15)}${b.lines(spokes.filter((_, i) => i % 2), 'ink fine', 0.15)}
-      ${b.circle(60, 94, 10, 'body')}${b.tinted(b.circleD(60, 94, 4.4, 0.2), 'c1', 'ink')}
-      ${crown(b, 60, 56, 17)}${at(60, 132.6, crown(b, 0, 0, 17, 'c2'), 180)}`;
+    const tiara = 'M-5.4,-43 L-6.4,-50 L-3,-46.6 L0,-52 L3,-46.6 L6.4,-50 L5.4,-43 Z';
+    return `${sun(b, 24, 45, 5.6, 'c1', 12)}${at(97, 45, `${C1(moon)}${el(moon, 'ink fine')}`)}
+      ${rod(60, 100, 42, 153, 3.4)}${rod(60, 100, 78, 153, 3.4)}${b.poly(rect(34, 152, 86, 156.6), 'body', true)}
+      <circle class="ko" cx="60" cy="100" r="28.4"/>${b.circle(60, 100, 27, 'body bold')}${b.circle(60, 100, 22, 'ink')}${b.lines(joints, 'ink hair', 0.1)}${C2(ring(24.5).map(([x, y]) => dot(x + 3.2, y - 3.2, 1.2)).join(' '))}
+      ${b.lines(spokes, 'ink', 0.15)}${b.circle(60, 100, 7, 'body')}${b.tinted(b.circleD(60, 100, 3.2, 0.2), 'c1', 'ink')}
+      ${rider(60, 74.6, 0, 'c1', 's1', [[[-6, -33], [-10, -24], [-7, -15]], [[6, -33], [10, -24], [7, -15]]], [], b.tinted(tiara, 'c2', 'ink fine'))}
+      ${rider(25, 125, 12, 'c2', 's2', [[[-6, -33], [-3, -42], [3, -49]], [[6, -33], [11, -40], [15, -47]]], [[[-3, -17], [-6, -8], [-4, 0]], [[3, -17], [7, -9], [4, -1]]])}
+      ${rider(98, 80, 200, 'lite', '', [[[-6, -33], [-14, -38], [-19, -31]], [[6, -33], [14, -38], [19, -31]]], [[[-3, -17], [-9, -9], [-12, 0]], [[3, -17], [8, -8], [13, -2]]])}
+      ${at(96, 150.6, crown(b, 0, 0, 12, 'c2'), 26)}${b.line(13, 156.6, 107, 156.6)}${b.dashes([[14, 150, 9], [16, 143, 6]])}`;
   }
 
   // ───────── 11〜21 ─────────
