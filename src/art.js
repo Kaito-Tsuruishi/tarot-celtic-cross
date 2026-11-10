@@ -5,8 +5,6 @@ const Art = (() => {
   const ROMAN = ['0', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII', 'XIII', 'XIV', 'XV', 'XVI', 'XVII', 'XVIII', 'XIX', 'XX', 'XXI'];
   const RANK_LABEL = { 1: 'A', 11: 'P', 12: 'N', 13: 'Q', 14: 'K' };
   const SUIT_NAME = { wands: 'WANDS', cups: 'CUPS', swords: 'SWORDS', pentacles: 'PENTACLES' };
-  // スートの差し色（羊皮紙の上のインク）
-  const SUIT_COLOR = { wands: '#9b3f2a', cups: '#2f5d6b', swords: '#4b5363', pentacles: '#5a6a2a', major: '#8c6a28' };
 
   // スート記号。原点中心、おおよそ 24px 四方。.ink=主線 .tint=差し色の面
   const SUIT_GLYPH = {
@@ -203,7 +201,6 @@ const Art = (() => {
   function face(card, uid) {
     const isMajor = card.arcana === 'major';
     const kind = isMajor ? 'major' : card.suit;
-    const color = SUIT_COLOR[kind];
     let corner, suitMark = '', body, titleEn;
     if (isMajor) {
       corner = ROMAN[card.rank];
@@ -234,7 +231,7 @@ const Art = (() => {
       }
       titleEn = SUIT_NAME[card.suit];
     }
-    return `<svg class="card-art ${isMajor ? 'is-major' : 'is-minor'}" style="--suit:${color}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+    return `<svg class="card-art ${isMajor ? 'is-major' : 'is-minor'}" style="--suit:var(--suit-${kind})" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
       ${frame(uid, kind)}
       <text class="corner" x="16" y="25">${esc(corner)}</text>
       ${suitMark}
@@ -256,20 +253,20 @@ const Art = (() => {
       return `<circle cx="${(CX + Math.cos(a) * 36).toFixed(1)}" cy="${(H / 2 + Math.sin(a) * 36).toFixed(1)}" r="1.1"/>`;
     }).join('');
     return `<svg class="card-art back" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
-      <defs><clipPath id="back-clip"><rect x="9" y="9" width="${W - 18}" height="${H - 18}" rx="3"/></clipPath></defs>
-      <rect class="night" x="0" y="0" width="${W}" height="${H}" rx="7"/>
+      <defs><clipPath id="back-clip"><rect x="7" y="7" width="${W - 14}" height="${H - 14}" rx="3"/></clipPath></defs>
+      <rect class="stock" x="0" y="0" width="${W}" height="${H}" rx="7"/>
+      <rect class="field" x="7" y="7" width="${W - 14}" height="${H - 14}" rx="3"/>
       <g class="weave" clip-path="url(#back-clip)">${weave.join('')}</g>
-      <rect class="brass" x="5" y="5" width="${W - 10}" height="${H - 10}" rx="4"/>
-      <rect class="brass thin" x="9" y="9" width="${W - 18}" height="${H - 18}" rx="3"/>
+      <rect class="back-line thin" x="11" y="11" width="${W - 22}" height="${H - 22}" rx="2"/>
       <circle class="medal" cx="${CX}" cy="${H / 2}" r="31"/>
-      <circle class="brass" cx="${CX}" cy="${H / 2}" r="26"/>
-      <g class="brass dots">${ring}</g>
-      <g class="brass" transform="translate(${CX} ${H / 2})">
+      <circle class="back-line" cx="${CX}" cy="${H / 2}" r="26"/>
+      <g class="back-line dots">${ring}</g>
+      <g class="back-line" transform="translate(${CX} ${H / 2})">
         ${star8(0, 0, 18)}
         <circle cx="0" cy="0" r="3"/>
       </g>
-      <g class="brass" transform="translate(${CX} 22)">${star4(0, 0, 4)}</g>
-      <g class="brass" transform="translate(${CX} ${H - 22})">${star4(0, 0, 4)}</g>
+      <g class="back-line" transform="translate(${CX} 24)">${star4(0, 0, 4)}</g>
+      <g class="back-line" transform="translate(${CX} ${H - 24})">${star4(0, 0, 4)}</g>
     </svg>`;
   }
 

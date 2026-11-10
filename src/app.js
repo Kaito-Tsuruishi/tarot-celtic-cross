@@ -1,10 +1,10 @@
 // 画面制御。ジャンル選択 → シャッフル → 10 枚を配る → 1 枚ずつめくる（拡大シートで読む） → 総合リーディング
 (() => {
   const GENRES = [
-    { id: 'general', name: '総合', en: 'GENERAL', desc: 'いまの流れ全体を見る' },
-    { id: 'love', name: '恋愛', en: 'LOVE', desc: '相手との関係、片思い、パートナーシップ' },
-    { id: 'work', name: '仕事', en: 'WORK', desc: '職場、キャリア、取り組んでいること' },
-    { id: 'relation', name: '人間関係', en: 'RELATIONSHIPS', desc: '友人、家族、周囲との関わり' },
+    { id: 'general', name: '総合', desc: 'いまの流れ全体を見る' },
+    { id: 'love', name: '恋愛', desc: '相手との関係、片思い、パートナーシップ' },
+    { id: 'work', name: '仕事', desc: '職場、キャリア、取り組んでいること' },
+    { id: 'relation', name: '人間関係', desc: '友人、家族、周囲との関わり' },
   ];
   // 恋愛ジャンルで最初に選んでもらう状況
   const LOVE_STATUS = [
@@ -24,9 +24,9 @@
     major: '大アルカナは、人生の大きなテーマや転機、本人の意思を超えた流れを表す 22 枚です。ほかのカードより重く読みます。',
     minor: (suit) => `小アルカナは日常の出来事や、自分の行動で変えられる範囲を表す 56 枚です。${SUIT_INFO[suit].name}は${SUIT_INFO[suit].element}の元素で、${SUIT_INFO[suit].theme}を司ります。`,
   };
-  const kindChip = (card) => (card.arcana === 'major'
-    ? '<span class="chip kind major">大アルカナ</span>'
-    : `<span class="chip kind ${card.suit}">小アルカナ<span class="sep">・</span>${SUIT_INFO[card.suit].name}（${SUIT_INFO[card.suit].element}）</span>`);
+  const kindLabel = (card) => (card.arcana === 'major'
+    ? '<span class="kind major">大アルカナ</span>'
+    : `<span class="kind ${card.suit}">小アルカナ・${SUIT_INFO[card.suit].name}（${SUIT_INFO[card.suit].element}）</span>`);
   const FRAME_LABEL = { now: 'いま働いている影響として', obstacle: '立ちはだかっているものとして', goal: '意識して目指しているものとして', inner: '心の奥にあるものとして', past: '過ぎ去りつつある影響として', future: 'これから働き始める流れとして', attitude: '本人の構えとして', environment: '周りからの影響として', hopefear: '望みと恐れの両面として', outcome: 'たどり着く先として' };
   const POSITIONS = [
     { n: 1, name: '現状', desc: 'あなたや物事全体を包んでいる空気。いま働いている影響。' },
@@ -114,45 +114,49 @@
   function cardLineHtml(c, tag = 'h3') {
     return `<div class="card-line">
       <${tag}>${c.card.nameJa}</${tag}>
-      <div class="card-sub"><span class="badge ${c.rev ? 'rev' : 'up'}">${orientLabel(c)}</span>${kindChip(c.card)}</div>
-      <span class="en">${c.card.nameEn.toUpperCase()}</span>
+      <div class="card-sub"><span class="badge ${c.rev ? 'rev' : 'up'}">${orientLabel(c)}</span>${kindLabel(c.card)}</div>
+      <span class="en">${c.card.nameEn}</span>
     </div>`;
   }
   function thumbHtml(c, uid) {
     return `<div class="thumb${c.rev ? ' is-reversed' : ''}">${Art.face(c.card, uid)}</div>`;
   }
+  // 読点ごとのまとまりで折り返す
+  const phrasesHtml = (text) => text.replace(/[^、]+、?/g, (m) => `<span class="phrase">${m}</span>`);
+  const posHtml = (pos) => `<div class="pos"><span class="n">${pos}</span>${POSITIONS[pos - 1].name}</div>`;
+  // スプレッドとポジションから決まる、カード 1 枚ごとの傾き（-1.2〜1.2 度）
+  const tiltOf = (seed, pos) => ((Math.imul(seed ^ Math.imul(pos, 0x9e3779b1), 0x85ebca6b) >>> 16) % 25 - 12) / 10;
 
   // --- ジャンル選択 ---
   function renderGenres() {
     const ul = $('genre-list');
     ul.innerHTML = '';
-    GENRES.forEach((g, i) => {
+    GENRES.forEach((g) => {
       const li = document.createElement('li');
-      li.style.setProperty('--i', i);
       const b = document.createElement('button');
       b.type = 'button';
       b.className = 'genre-btn';
       b.dataset.genre = g.id;
-      b.innerHTML = `<span class="name">${g.name}</span><span class="en">${g.en}</span><span class="desc">${g.desc}</span>`;
+      b.innerHTML = `<span class="name">${g.name}</span><span class="desc">${phrasesHtml(g.desc)}</span>`;
       b.addEventListener('click', () => (g.id === 'love' ? showLoveStatus() : start(g.id)));
       li.appendChild(b);
       ul.appendChild(li);
     });
     $('positions-list').innerHTML = POSITIONS.map((p) => `<li><b>${p.name}</b>：${p.desc}</li>`).join('');
+    $('fan').innerHTML = Array.from({ length: 3 }, (_, i) => `<div class="fan-card" style="--k:${i}">${Art.back()}</div>`).join('');
   }
 
   // --- 恋愛の状況を選ぶ ---
   function renderLoveStatus() {
     const ul = $('love-status-list');
     ul.innerHTML = '';
-    LOVE_STATUS.forEach((x, i) => {
+    LOVE_STATUS.forEach((x) => {
       const li = document.createElement('li');
-      li.style.setProperty('--i', i);
       const b = document.createElement('button');
       b.type = 'button';
       b.className = 'genre-btn';
       b.dataset.status = x.id;
-      b.innerHTML = `<span class="name">${x.name}</span><span class="desc">${x.desc}</span>`;
+      b.innerHTML = `<span class="name">${x.name}</span><span class="desc">${phrasesHtml(x.desc)}</span>`;
       b.addEventListener('click', () => start('love', x.id));
       li.appendChild(b);
       ul.appendChild(li);
@@ -250,6 +254,7 @@
       const slot = document.createElement('div');
       slot.className = 'slot is-undealt';
       slot.dataset.pos = String(c.pos);
+      slot.style.setProperty('--tilt', `${tiltOf(state.seed, c.pos)}deg`);
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'card';
@@ -287,11 +292,12 @@
     setStatus('カードを並べています…', true);
     const d = deck.getBoundingClientRect();
     const dc = { x: d.left + d.width / 2, y: d.top + d.height / 2 };
+    const rotOf = (slot) => (slot.dataset.pos === '2' ? 90 : 0);
     slots.forEach((slot, i) => {
       const r = slot.getBoundingClientRect();
       const dx = dc.x - (r.left + r.width / 2);
       const dy = dc.y - (r.top + r.height / 2);
-      const rot = slot.dataset.pos === '2' ? 90 : 0;
+      const rot = rotOf(slot);
       slot.style.transition = 'none';
       slot.style.transform = `translate(${dx}px, ${dy}px) rotate(${rot}deg) scale(0.9)`;
       slot.style.transitionDelay = `${i * DEAL_STEP_MS}ms`;
@@ -302,7 +308,7 @@
       slot.style.transition = '';
       slot.classList.remove('is-undealt');
       slot.classList.add('is-landing');
-      slot.style.transform = slot.dataset.pos === '2' ? 'rotate(90deg)' : 'translate(0, 0)';
+      slot.style.transform = `rotate(calc(${rotOf(slot)}deg + var(--tilt)))`;
     });
     deck.classList.add('is-fading');
     await wait(DEAL_STEP_MS * (slots.length - 1) + DEAL_MS + 60);
@@ -316,11 +322,11 @@
 
   // --- 進行 ---
   function renderProgress() {
-    $('progress').innerHTML = POSITIONS.map((p) => `<span class="dot" data-pos="${p.n}" title="${p.n} ${p.name}"></span>`).join('');
+    $('progress').innerHTML = POSITIONS.map((p) => `<span class="step" data-pos="${p.n}" title="${p.n} ${p.name}"></span>`).join('');
     updateProgress();
   }
   function updateProgress() {
-    document.querySelectorAll('#progress .dot').forEach((d) => {
+    document.querySelectorAll('#progress .step').forEach((d) => {
       const pos = Number(d.dataset.pos);
       d.classList.toggle('is-done', pos <= state.next);
       d.classList.toggle('is-next', pos === state.next + 1);
@@ -422,12 +428,11 @@
   }
 
   function appendEntry(c) {
-    const p = POSITIONS[c.pos - 1];
     const li = document.createElement('li');
     li.className = 'entry';
     li.id = `entry-${c.pos}`;
     li.innerHTML = `
-      <div class="pos">${c.pos}　${p.name}</div>
+      ${posHtml(c.pos)}
       <div class="entry-body">
         <button type="button" class="thumb-btn" aria-label="${c.card.nameJa}（${orientLabel(c)}）の詳細を見る">${thumbHtml(c, 100 + c.pos)}</button>
         <div class="entry-main">
@@ -558,12 +563,12 @@
       <strong class="pos-name">${p.name}</strong>
       <span class="pos-desc">${p.desc}</span>`;
     $('sheet-body').innerHTML = `
-      <div class="sheet-hero">
+      <div class="sheet-plate">
         <div class="sheet-art${c.rev ? ' is-reversed' : ''}">${Art.face(c.card, 200 + c.pos)}</div>
-        ${cardLineHtml(c, 'h2')}
       </div>
+      <div class="sheet-title">${cardLineHtml(c, 'h2')}</div>
       <p class="sheet-text">${genreText(c)}</p>
-      <details class="sheet-more">
+      <details class="sheet-more more">
         <summary>キーワード・基本の意味・このポジションについて</summary>
         <ul class="keywords" aria-label="キーワード">${keywordsOf(c).map((k) => `<li>${k}</li>`).join('')}</ul>
         <p class="sheet-basic"><span>基本の意味</span>${c.rev ? c.card.meaning.rev : c.card.meaning.up}</p>
@@ -619,7 +624,7 @@
     $('summary-body').innerHTML = `
       ${paras}
       <div class="final">
-        <div class="pos">10　最終結果</div>
+        ${posHtml(10)}
         <div class="final-body">
           ${thumbHtml(c, 400)}
           <div class="entry-main">
