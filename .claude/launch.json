@@ -6,6 +6,12 @@
       "runtimeExecutable": "python3",
       "runtimeArgs": ["-m", "http.server", "8765", "--directory", "dist"],
       "port": 8765
+    },
+    {
+      "name": "tarot-selftest",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["scripts/serve-test.js", "8766"],
+      "port": 8766
     }
   ]
 }
