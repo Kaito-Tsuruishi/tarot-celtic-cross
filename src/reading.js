@@ -25,7 +25,8 @@ const Reading = (() => {
   // 大アルカナの元素（黄金の夜明け団系の占星術対応）
   const MAJOR_ELEMENT = ['air', 'air', 'water', 'earth', 'fire', 'earth', 'air', 'water', 'fire', 'earth', 'fire', 'air', 'water', 'water', 'fire', 'earth', 'fire', 'air', 'water', 'fire', 'fire', 'earth'];
   const ELEMENT_JA = { fire: '火', water: '水', air: '風', earth: '地' };
-  const element = (c) => (c.card.arcana === 'major' ? MAJOR_ELEMENT[c.card.rank] : SUIT_ELEMENT[c.card.suit]);
+  const elementOf = (card) => (card.arcana === 'major' ? MAJOR_ELEMENT[card.rank] : SUIT_ELEMENT[card.suit]);
+  const element = (c) => elementOf(c.card);
   // 'same'=同じ元素で強め合う / 'friend'=相性がよい（火と風・水と地） / 'foe'=打ち消し合う（火と水・風と地） / 'neutral'
   function dignity(a, b) {
     const ea = element(a), eb = element(b);
@@ -390,5 +391,5 @@ const Reading = (() => {
     };
   }
 
-  return { build };
+  return { build, elementOf };
 })();

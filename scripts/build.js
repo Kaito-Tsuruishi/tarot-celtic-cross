@@ -66,7 +66,7 @@ console.log(`love-status: ${lsCount}`);
 const dataJs = `const CARDS = ${JSON.stringify(cards)};`;
 const html = read('src/index.html')
   .replace('<!--DATA-->', `<script>${dataJs.replace(/<\//g, '<\\/')}</script>`)
-  .replace('<!--ART-->', `<script>\n${read('src/art.js')}</script>`)
+  .replace('<!--ART-->', `<script>\n${['art-kit.js', 'art-minor.js', 'art-major.js', 'art.js'].map((f) => read(`src/${f}`)).join('\n')}</script>`)
   .replace('<!--READING-->', `<script>\n${read('src/reading.js')}</script>`)
   .replace('<!--APP-->', `<script>\n${read('src/app.js')}</script>`);
 fs.mkdirSync(path.join(root, 'dist'), { recursive: true });
